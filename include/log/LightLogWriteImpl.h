@@ -96,6 +96,25 @@ struct LogCallbackInfo;
 struct LightLogWriteInfo {
 	std::wstring                   sLogTagNameVal;  /*!< Log tag name */
 	std::wstring                   sLogContentVal;  /*!< Log content */
+	
+	// Default constructor
+	LightLogWriteInfo() = default;
+	
+	// Constructor with copy semantics
+	LightLogWriteInfo(const std::wstring& tagName, const std::wstring& content)
+		: sLogTagNameVal(tagName), sLogContentVal(content) {}
+	
+	// Constructor with move semantics for better performance
+	LightLogWriteInfo(std::wstring&& tagName, std::wstring&& content)
+		: sLogTagNameVal(std::move(tagName)), sLogContentVal(std::move(content)) {}
+	
+	// Mixed constructor (copy tag, move content)
+	LightLogWriteInfo(const std::wstring& tagName, std::wstring&& content)
+		: sLogTagNameVal(tagName), sLogContentVal(std::move(content)) {}
+	
+	// Mixed constructor (move tag, copy content)
+	LightLogWriteInfo(std::wstring&& tagName, const std::wstring& content)
+		: sLogTagNameVal(std::move(tagName)), sLogContentVal(content) {}
 };
 
 /**
@@ -241,6 +260,7 @@ public:
 	* It will also handle log overflow according to the specified strategy.
 	*/
 	void WriteLogContent(LogLevel level, const std::wstring& sMessage);
+	void WriteLogContent(LogLevel level, std::wstring&& sMessage);  // Move version for efficiency
 	void WriteLogContent(LogLevel level, const std::string& sMessage);
 
 	/**
@@ -251,10 +271,15 @@ public:
 	* It will also handle log overflow according to the specified strategy.
 	*/
 	void WriteLogContent(const std::wstring& sTypeVal, const std::wstring& sMessage);
+	
+	// Optimized version with move semantics to reduce string copying
+	void WriteLogContent(std::wstring&& sTypeVal, std::wstring&& sMessage);
 
 	void WriteLogContent(const std::string& sTypeVal, const std::string& sMessage);
+	void WriteLogContent(std::string&& sTypeVal, std::string&& sMessage);  // Move version for efficiency
 
 	void WriteLogContent(const std::u16string& sTypeVal, const std::u16string& sMessage);
+	void WriteLogContent(std::u16string&& sTypeVal, std::u16string&& sMessage);  // Move version for efficiency
 
 	/**
 	* @brief Gets the current discard count

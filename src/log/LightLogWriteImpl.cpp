@@ -150,7 +150,7 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 		// std::wcerr << L"[WriteLogContent] Try push (Block), queue size: " <<
 		// pLogWriteQueue.size() << std::endl;
 		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
-		pLogWriteQueue.push({ sTypeVal, sMessage });
+		pLogWriteQueue.emplace(sTypeVal, sMessage);
 		// std::wcerr << L"[WriteLogContent] Pushed (Block), queue size: " <<
 		// pLogWriteQueue.size() << std::endl;
 	}
@@ -169,7 +169,7 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 				lastReportedDiscardCount.store(discardCount.load());
 			}
 		}
-		pLogWriteQueue.push({ sTypeVal, sMessage });
+		pLogWriteQueue.emplace(sTypeVal, sMessage);
 		// std::wcout << L"[WriteLogContent] Pushed (DropOldest), queue size: " <<
 		// pLogWriteQueue.size() << std::endl;
 	}
@@ -177,20 +177,84 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 	if (bNeedReport && !inErrorReport.exchange(true)) {
 		std::wstring overflowMsg = L"The log queue overflows and has been discarded " + std::to_wstring(currentDiscard) + L" logs";
 		// std::wcerr << L"[WriteLogContent] Report overflow: " << overflowMsg << std::endl;
-		WriteLogContent(L"LOG_OVERFLOW", overflowMsg);
+		WriteLogContent(L"LOG_OVERFLOW", std::move(overflowMsg));
+		inErrorReport = false;
+	}
+}
+
+void LightLogWrite_Impl::WriteLogContent(std::wstring&& sTypeVal, std::wstring&& sMessage)
+{
+	bool bNeedReport = false;
+	size_t currentDiscard = 0;
+	static std::atomic<bool> inErrorReport = false;
+
+	if (queueFullStrategy == LogQueueOverflowStrategy::Block) {
+		std::unique_lock<std::mutex> sWriteLock(pLogWriteMutex);
+		// std::wcerr << L"[WriteLogContent] Try push (Block), queue size: " <<
+		// pLogWriteQueue.size() << std::endl;
+		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
+		pLogWriteQueue.emplace(std::move(sTypeVal), std::move(sMessage));
+		// std::wcerr << L"[WriteLogContent] Pushed (Block), queue size: " <<
+		// pLogWriteQueue.size() << std::endl;
+	}
+	else if (queueFullStrategy == LogQueueOverflowStrategy::DropOldest) {
+		std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
+		// std::wcerr << L"[WriteLogContent] Try push (DropOldest), queue size: " <<
+		// pLogWriteQueue.size() << std::endl;
+		if (pLogWriteQueue.size() >= kMaxQueueSize) {
+			// std::wcerr << L"[WriteLogContent] Drop oldest, queue full: " <<
+			// pLogWriteQueue.size() << std::endl;
+			pLogWriteQueue.pop();
+			++discardCount;
+			if (discardCount - lastReportedDiscardCount >= reportInterval) {
+				bNeedReport = true;
+				currentDiscard = discardCount;
+				lastReportedDiscardCount.store(discardCount.load());
+			}
+		}
+		pLogWriteQueue.emplace(std::move(sTypeVal), std::move(sMessage));
+		// std::wcout << L"[WriteLogContent] Pushed (DropOldest), queue size: " <<
+		// pLogWriteQueue.size() << std::endl;
+	}
+	pWrittenCondVar.notify_one();
+	if (bNeedReport && !inErrorReport.exchange(true)) {
+		std::wstring overflowMsg = L"The log queue overflows and has been discarded " + std::to_wstring(currentDiscard) + L" logs";
+		// std::wcerr << L"[WriteLogContent] Report overflow: " << overflowMsg << std::endl;
+		WriteLogContent(L"LOG_OVERFLOW", std::move(overflowMsg));  // Use move for the overflow message too
 		inErrorReport = false;
 	}
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::string& sTypeVal, const std::string& sMessage)
 {
-	std::wstring wContent = UniConv::GetInstance()->LocaleToWideString(sMessage);
-	WriteLogContent(UniConv::GetInstance()->LocaleToWideString(sTypeVal), UniConv::GetInstance()->LocaleToWideString(sMessage));
+	// Convert once and reuse, then use move semantics to avoid additional copies
+	std::wstring wTypeVal = UniConv::GetInstance()->LocaleToWideString(sTypeVal);
+	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::u16string& sTypeVal, const std::u16string& sMessage)
 {
-	WriteLogContent(UniConv::GetInstance()->U16StringToWString(sTypeVal), UniConv::GetInstance()->U16StringToWString(sMessage));
+	// Convert once and reuse, then use move semantics to avoid additional copies
+	std::wstring wTypeVal = UniConv::GetInstance()->U16StringToWString(sTypeVal);
+	std::wstring wMessage = UniConv::GetInstance()->U16StringToWString(sMessage);
+	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
+}
+
+void LightLogWrite_Impl::WriteLogContent(std::string&& sTypeVal, std::string&& sMessage)
+{
+	// Convert once and reuse, then use move semantics to avoid additional copies
+	std::wstring wTypeVal = UniConv::GetInstance()->LocaleToWideString(sTypeVal);
+	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
+}
+
+void LightLogWrite_Impl::WriteLogContent(std::u16string&& sTypeVal, std::u16string&& sMessage)
+{
+	// Convert once and reuse, then use move semantics to avoid additional copies
+	std::wstring wTypeVal = UniConv::GetInstance()->U16StringToWString(sTypeVal);
+	std::wstring wMessage = UniConv::GetInstance()->U16StringToWString(sMessage);
+	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
 size_t LightLogWrite_Impl::GetDiscardCount() const
@@ -363,7 +427,7 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 	if (queueFullStrategy == LogQueueOverflowStrategy::Block) {
 		std::unique_lock<std::mutex> sWriteLock(pLogWriteMutex);
 		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
-		pLogWriteQueue.push({ levelStr, sMessage });
+		pLogWriteQueue.emplace(std::move(levelStr), sMessage);
 	}
 	else if (queueFullStrategy == LogQueueOverflowStrategy::DropOldest) {
 		std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
@@ -376,20 +440,81 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 				lastReportedDiscardCount.store(discardCount.load());
 			}
 		}
-		pLogWriteQueue.push({ levelStr, sMessage });
+		pLogWriteQueue.emplace(std::move(levelStr), sMessage);
 	}
 	pWrittenCondVar.notify_one();
 
 	if (bNeedReport && !inErrorReport.exchange(true)) {
 		std::wstring overflowMsg = L"The log queue overflows and has been discarded " + std::to_wstring(currentDiscard) + L" logs";
-		WriteLogContent(LogLevel::Warning, overflowMsg);
+		WriteLogContent(LogLevel::Warning, std::move(overflowMsg));
+		inErrorReport = false;
+	}
+}
+
+void LightLogWrite_Impl::WriteLogContent(LogLevel level, std::wstring&& sMessage)
+{
+	if (level < eMinLogLevel) {
+		return;
+	}
+
+	std::wstring levelStr = LogLevelToWString(level);
+
+	// 触发回调（在写入队列之前）
+	TriggerLogCallbacks(level, levelStr, sMessage);
+
+	// Write to multi-output system if enabled
+	if (multiOutputEnabled.load() && multiOutputManager) {
+		LogCallbackInfo logInfo;
+		logInfo.level = level;
+		logInfo.levelString = levelStr;
+		logInfo.message = sMessage;  // Copy for callback, original will be moved later
+		logInfo.timestamp = std::chrono::system_clock::now();
+		logInfo.threadId = std::this_thread::get_id();
+
+		try {
+			multiOutputManager->WriteLog(logInfo);
+		}
+		catch (...) {
+			// Continue with normal logging even if multi-output fails
+		}
+	}
+
+	bool bNeedReport = false;
+	size_t currentDiscard = 0;
+	static std::atomic<bool> inErrorReport = false;
+
+	if (queueFullStrategy == LogQueueOverflowStrategy::Block) {
+		std::unique_lock<std::mutex> sWriteLock(pLogWriteMutex);
+		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
+		pLogWriteQueue.emplace(std::move(levelStr), std::move(sMessage));
+	}
+	else if (queueFullStrategy == LogQueueOverflowStrategy::DropOldest) {
+		std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
+		if (pLogWriteQueue.size() >= kMaxQueueSize) {
+			pLogWriteQueue.pop();
+			++discardCount;
+			if (discardCount - lastReportedDiscardCount >= reportInterval) {
+				bNeedReport = true;
+				currentDiscard = discardCount;
+				lastReportedDiscardCount.store(discardCount.load());
+			}
+		}
+		pLogWriteQueue.emplace(std::move(levelStr), std::move(sMessage));
+	}
+	pWrittenCondVar.notify_one();
+
+	if (bNeedReport && !inErrorReport.exchange(true)) {
+		std::wstring overflowMsg = L"The log queue overflows and has been discarded " + std::to_wstring(currentDiscard) + L" logs";
+		WriteLogContent(LogLevel::Warning, std::move(overflowMsg));
 		inErrorReport = false;
 	}
 }
 
 void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::string& sMessage)
 {
-	WriteLogContent(level, UniConv::GetInstance()->LocaleToWideString(sMessage));
+	// Convert to wstring and use move version for efficiency
+	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	WriteLogContent(level, std::move(wMessage));
 }
 
 // 宏定义用于简化重复的日志函数实现
