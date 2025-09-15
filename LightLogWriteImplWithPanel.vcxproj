@@ -159,14 +159,12 @@
     <ClInclude Include="include\log\ILogFormatter.h" />
     <ClInclude Include="include\log\ILogOutput.h" />
     <ClInclude Include="include\log\LightLogWriteImpl.h" />
-    <ClInclude Include="include\log\LightLogWriteImplEx.h" />
     <ClInclude Include="include\log\LogOutputManager.h" />
     <ClInclude Include="include\log\MultiOutputLogConfig.h" />
     <ClInclude Include="include\log\NetworkLogOutput.h" />
     <ClInclude Include="include\log\PerformanceProfiler.h" />
     <ClInclude Include="include\log\singleton.h" />
     <ClInclude Include="include\log\UniConv.h" />
-    <ClInclude Include="include\nlohmann\json.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\log\encodings.inc" />
