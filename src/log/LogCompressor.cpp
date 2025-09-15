@@ -1,30 +1,52 @@
-#include "../../include/log/LogCompressor.h"
-#include "../../include/miniz/zip_file.hpp"
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-
-/*************************        // 有超时等待
-        auto startTime = std::chrono::steady_clock::now();
-        while (activeTasksCount_ > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            if (std::chrono::steady_clock::now() - startTime >= timeout) {
-                return false;
-            }
-        }
-        return true;
-    }***********************************************
+/*****************************************************************************
  *  LogCompressor Implementation
  *  Copyright (C) 2025 hesphoros <hesphoros@gmail.com>
  *
  *  @file     LogCompressor.cpp
  *  @brief    日志压缩器具体实现
- *  @details  基于miniz库的ZIP压缩实现
+ *  @details  基于miniz库的ZIP压缩实现，使用BS::thread_pool进行并发处理
  *
  *  @author   hesphoros
  *  @email    hesphoros@gmail.com
  *****************************************************************************/
+
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #ifndef WIN32_LEAN_AND_MEAN  
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    // Force undefine Windows min/max macros
+    #ifdef max
+        #undef max
+    #endif
+    #ifdef min
+        #undef min
+    #endif
+#endif
+
+#include "../../include/log/LogCompressor.h"
+
+// Include BS thread pool after macro cleanup
+#ifdef _WIN32
+    // Additional protection before including BS thread pool
+    #pragma push_macro("min")
+    #pragma push_macro("max")
+    #undef min
+    #undef max
+    #include "../../include/BS/BS_thread_pool.hpp"
+    #pragma pop_macro("max")
+    #pragma pop_macro("min")
+#else
+    #include "../../include/BS/BS_thread_pool.hpp"
+#endif
+
+#include "../../include/miniz/zip_file.hpp"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
 
 // ==================== LogCompressor Implementation ====================
 
@@ -216,9 +238,7 @@ size_t LogCompressor::CancelPendingTasks() {
     // 只能返回0，表示没有取消任何任务
     return 0;
 }
-    
-    return canceledCount;
-}
+
 
 std::vector<CompressionAlgorithm> LogCompressor::GetSupportedAlgorithms() const {
     return { CompressionAlgorithm::ZIP };

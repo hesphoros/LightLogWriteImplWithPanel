@@ -1,5 +1,6 @@
 #ifndef INCLUDE_LIGHTLOGWRITEIMPL_HPP_
 #define INCLUDE_LIGHTLOGWRITEIMPL_HPP_
+#define NOMINMAX
 /*****************************************************************************
  *  LightLogWriteImpl
  *  Copyright (C) 2025 hesphoros <hesphoros@gmail.com>
@@ -59,7 +60,10 @@
 class UniConv;
 class LogOutputManager;
 class ILogOutput;
+class ILogCompressor;
+class LogCompressor;
 struct MultiOutputLogConfig;
+struct CompressionStatistics;
 
 struct LogCallbackInfo;
 
@@ -209,7 +213,7 @@ public:
 		*       and the default report interval is 100 discarded logs.
 		* @version 1.0.0
 		*/
-	LightLogWrite_Impl(size_t maxQueueSize = 500000, LogQueueOverflowStrategy strategy = LogQueueOverflowStrategy::Block, size_t reportInterval = 100);
+	LightLogWrite_Impl(size_t maxQueueSize = 500000, LogQueueOverflowStrategy strategy = LogQueueOverflowStrategy::Block, size_t reportInterval = 100, std::shared_ptr<ILogCompressor> compressor = nullptr);
 
 	/**
 		* @brief Destructor for LightLogWrite_Impl
@@ -499,14 +503,6 @@ private:
 	void PerformLogRotation(const std::wstring& reason);
 
 	/**
-	 * @brief Compress a log file
-	 * @param sourceFile The source log file to compress
-	 * @param targetFile The target compressed file path
-	 * @return true if compression succeeded, false otherwise
-	 */
-	bool CompressLogFile(const std::wstring& sourceFile, const std::wstring& targetFile);
-
-	/**
 	 * @brief Generate archive file name with timestamp
 	 * @param baseFileName The base file name
 	 * @param timestamp The timestamp for the archive
@@ -527,31 +523,27 @@ private:
 	 */
 	size_t GetCurrentLogFileSizeUnlocked() const;
 
+	// Compression system methods
+public:
 	/**
-	 * @brief Start the compression worker thread
-	 * @details Initializes and starts the background compression worker thread
+	 * @brief Set the log compressor instance
+	 * @param compressor The compressor instance to use (can be nullptr to disable compression)
+	 * @details This allows runtime replacement of the compression system
 	 */
-	void StartCompressionWorker();
+	void SetCompressor(std::shared_ptr<ILogCompressor> compressor);
 
 	/**
-	 * @brief Stop the compression worker thread
-	 * @details Stops the compression worker thread and waits for completion
+	 * @brief Get the current compressor instance
+	 * @return Pointer to the current compressor, or nullptr if no compressor is set
 	 */
-	void StopCompressionWorker();
+	std::shared_ptr<ILogCompressor> GetCompressor() const;
 
 	/**
-	 * @brief Add a compression task to the queue
-	 * @param sourceFile Source file path to compress
-	 * @param targetFile Target compressed file path
-	 * @details Adds a compression task to the queue for async processing
+	 * @brief Get compression statistics
+	 * @return Compression statistics from the current compressor
+	 * @details Returns empty statistics if no compressor is available
 	 */
-	void EnqueueCompressionTask(const std::wstring& sourceFile, const std::wstring& targetFile);
-
-	/**
-	 * @brief Background worker function for compression
-	 * @details Main loop for the compression worker thread
-	 */
-	void CompressionWorkerLoop();
+	CompressionStatistics GetCompressionStatistics() const;
 
 	// Multi-output system methods
 public:
@@ -644,17 +636,9 @@ private:
 	mutable std::mutex              rotationMutex;             /*!< Mutex for rotation operations    */
 	std::atomic<bool>               forceRotationRequested;    /*!< Manual rotation request flag     */
 	
-	// Async compression queue members
-	struct CompressionTask {
-		std::wstring               sourceFile;                 /*!< Source file to compress          */
-		std::wstring               targetFile;                 /*!< Target compressed file           */
-		std::chrono::system_clock::time_point createdTime;     /*!< Task creation time               */
-	};
-	std::queue<CompressionTask>     compressionQueue;          /*!< Queue for compression tasks      */
-	std::thread                     compressionWorkerThread;   /*!< Background compression worker    */
-	std::condition_variable         compressionCondVar;        /*!< Condition variable for queue     */
-	mutable std::mutex              compressionMutex;          /*!< Mutex for compression queue      */
-	std::atomic<bool>               stopCompressionWorker;     /*!< Stop flag for compression worker */
+	// Compression system members
+	std::shared_ptr<ILogCompressor> logCompressor_;           /*!< Log compressor instance          */
+	mutable std::mutex              compressorMutex_;         /*!< Mutex for compressor operations  */
 	
 	// Multi-output system members
 	std::shared_ptr<LogOutputManager> multiOutputManager;     /*!< Multi-output manager             */

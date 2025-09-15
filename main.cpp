@@ -11,6 +11,7 @@
 namespace fs = std::filesystem;
 // 引入我们的日志系统头文件
 #include "include/log/LightLogWriteImpl.h"
+#include "include/log/LogCompressor.h"
 #include "include/log/LogOutputManager.h"
 #include "include/log/ConsoleLogOutput.h"
 #include "include/log/FileLogOutput.h"
@@ -112,8 +113,16 @@ int main() {
         // Initialize encoding converter
         UniConv::GetInstance()->SetDefaultEncoding("UTF-8");
 
-        // Create logger object
-        LightLogWrite_Impl logger;
+        // Create LogCompressor with thread pool
+        LogCompressorConfig compressorConfig;
+        compressorConfig.workerThreadCount = std::thread::hardware_concurrency();
+        compressorConfig.algorithm = CompressionAlgorithm::ZIP;
+        compressorConfig.compressionLevel = 6;
+        auto compressor = std::make_shared<LogCompressor>(compressorConfig);
+        compressor->Start();
+        
+        // Create logger object with compressor
+        LightLogWrite_Impl logger(10000, LogQueueOverflowStrategy::Block, 1000, compressor);
         logger.SetLastingsLogs(L"logs", L"app_log");
 
         // Set minimum log level to Trace
@@ -155,15 +164,15 @@ int main() {
         // Test 3: Log rotation configuration with ZIP compression
         std::wcout << L"\n=== Test 3: Log Rotation Configuration (ZIP Compression) ===" << std::endl;
 
-        LogRotationConfig config;
-        config.strategy = LogRotationStrategy::SizeAndTime;
-        config.maxFileSizeMB = 1024;  // MB for quick testing
-        config.timeInterval = TimeRotationInterval::Daily;
-        config.enableCompression = true;  // Enable ZIP compression
-        config.archiveDirectory = L"logs/archive";
-        config.maxArchiveFiles = 50;
+        LogRotationConfig rotationConfig;
+        rotationConfig.strategy = LogRotationStrategy::SizeAndTime;
+        rotationConfig.maxFileSizeMB = 1024;  // MB for quick testing
+        rotationConfig.timeInterval = TimeRotationInterval::Daily;
+        rotationConfig.enableCompression = true;  // Enable ZIP compression
+        rotationConfig.archiveDirectory = L"logs/archive";
+        rotationConfig.maxArchiveFiles = 50;
 
-        logger.SetLogRotationConfig(config);
+        logger.SetLogRotationConfig(rotationConfig);
         std::wcout << L"Rotation configuration set: Max 1MB, ZIP compression enabled, max 5 archive files retained" << std::endl;
 
         // Display current configuration
@@ -255,6 +264,23 @@ int main() {
         // Brief wait to allow async compression queue to process any remaining tasks
         std::wcout << L"Allowing async compression queue to finish..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
+        
+        // Display LogCompressor statistics
+        std::wcout << L"\n=== LogCompressor Statistics ===" << std::endl;
+        auto stats = logger.GetCompressionStatistics();
+        std::wcout << L"Total tasks: " << stats.totalTasks << std::endl;
+        std::wcout << L"Successful tasks: " << stats.successfulTasks << std::endl;
+        std::wcout << L"Failed tasks: " << stats.failedTasks << std::endl;
+        std::wcout << L"Total original size: " << stats.totalOriginalSize << L" bytes" << std::endl;
+        std::wcout << L"Total compressed size: " << stats.totalCompressedSize << L" bytes" << std::endl;
+        if (stats.totalOriginalSize > 0) {
+            double ratio = (double)stats.totalCompressedSize / stats.totalOriginalSize * 100.0;
+            std::wcout << L"Compression ratio: " << std::fixed << std::setprecision(2) << ratio << L"%" << std::endl;
+        }
+        std::wcout << L"Average processing time: " << stats.averageProcessingTime.count() << L" ms" << std::endl;
+        
+        // Stop the compressor
+        compressor->Stop();
 
     }
     catch (const std::exception& e) {

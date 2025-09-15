@@ -71,11 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>.\include\log;.\include;.\src\log;.\include\miniz\;$(IncludePath)</IncludePath>
+    <IncludePath>.\include\BS;.\include\log;.\include;.\src\log;.\include\miniz\;$(IncludePath)</IncludePath>
     <LibraryPath>.\lib;.\lib\iconv;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>.\src\log;.\include\miniz;.\include\log;.\include;$(IncludePath)</IncludePath>
+    <IncludePath>.\include\BS;.\src\log;.\include\miniz;.\include\log;.\include;$(IncludePath)</IncludePath>
     <LibraryPath>.\lib\iconv;.\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -146,6 +146,7 @@
     <ClCompile Include="src\log\ConsoleLogOutput.cpp" />
     <ClCompile Include="src\log\FileLogOutput.cpp" />
     <ClCompile Include="src\log\LightLogWriteImpl.cpp" />
+    <ClCompile Include="src\log\LogCompressor.cpp" />
     <ClCompile Include="src\log\LogOutputManager.cpp" />
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp" />
     <ClCompile Include="src\log\UniConv.cpp" />
@@ -159,6 +160,8 @@
     <ClInclude Include="include\log\ILogFormatter.h" />
     <ClInclude Include="include\log\ILogOutput.h" />
     <ClInclude Include="include\log\LightLogWriteImpl.h" />
+    <ClInclude Include="include\log\LogCompressor.h" />
+    <ClInclude Include="include\log\ILogCompressor.h" />
     <ClInclude Include="include\log\LogOutputManager.h" />
     <ClInclude Include="include\log\MultiOutputLogConfig.h" />
     <ClInclude Include="include\log\NetworkLogOutput.h" />

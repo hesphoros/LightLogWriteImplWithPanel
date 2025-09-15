@@ -1,7 +1,10 @@
 #pragma once
 
+#define NOMINMAX
+#undef min
+#undef max
+
 #include "ILogCompressor.h"
-#include "../BS/BS_thread_pool.hpp"
 #include <queue>
 #include <thread>
 #include <mutex>
@@ -10,6 +13,10 @@
 #include <filesystem>
 #include <fstream>
 #include <future>
+#include <memory>
+#include <BS/BS_thread_pool.hpp>
+
+
 
 /*****************************************************************************
  *  LogCompressor
@@ -37,7 +44,7 @@
  */
 struct LogCompressorConfig {
     size_t maxQueueSize = 1000;                        /*!< 最大队列大小 */
-    size_t workerThreadCount = 1;                      /*!< 工作线程数量 */
+    size_t workerThreadCount = std::thread::hardware_concurrency();                      /*!< 工作线程数量 */
     CompressionAlgorithm algorithm = CompressionAlgorithm::ZIP; /*!< 压缩算法 */
     int compressionLevel = 6;                          /*!< 压缩级别 (1-9, 仅ZIP有效) */
     bool deleteSourceAfterSuccess = true;              /*!< 压缩成功后删除源文件 */

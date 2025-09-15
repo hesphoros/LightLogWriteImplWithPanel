@@ -24,5 +24,73 @@
     <ClCompile Include="src\log\UniConv.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\log\BaseLogOutput.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\BasicLogFormatter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\ConsoleLogOutput.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\FileLogOutput.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\LogOutputManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\MultiOutputLogConfig.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\log\BaseLogOutput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\BasicLogFormatter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ConsoleLogOutput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\iconv.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogFilter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogFormatter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogOutput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LightLogWriteImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LogOutputManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\MultiOutputLogConfig.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\NetworkLogOutput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\PerformanceProfiler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\singleton.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\UniConv.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="include\log\encodings.inc">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="include\log\README.MD" />
   </ItemGroup>
 </Project>

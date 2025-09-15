@@ -1,9 +1,11 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 #define NOMINMAX
+#undef max
+#undef min
 #include <iostream>
 #include "UniConv.h"
 #include "LightLogWriteImpl.h"
-#include "../../include/miniz/zip_file.hpp"
+#include "../../include/log/LogCompressor.h"
 #include "../../include/log/LogOutputManager.h"
 #include "../../include/log/MultiOutputLogConfig.h"
 #include "../../include/log/ConsoleLogOutput.h"
@@ -35,7 +37,7 @@ const char* LightLogWrite_Impl::LOG_LEVEL_STRINGS_A[] = {
 	"[FATAL     ]"    // Fatal
 };
 
-LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStrategy strategy, size_t reportInterval)
+LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStrategy strategy, size_t reportInterval, std::shared_ptr<ILogCompressor> compressor)
   :	kMaxQueueSize(maxQueueSize),
 	discardCount(0),
 	lastReportedDiscardCount(0),
@@ -46,13 +48,12 @@ LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStra
 	eMinLogLevel{ LogLevel::Trace },
 	pNextCallbackHandle(1),
 	lastRotationTime(std::chrono::system_clock::now()),
-	stopCompressionWorker(false),
 	forceRotationRequested(false),
-	multiOutputEnabled(false)
+	multiOutputEnabled(false),
+	logCompressor_(compressor)
 {
 	sWrittenThreads = std::thread(&LightLogWrite_Impl::RunWriteThread, this);
-	StartCompressionWorker();
-	
+
 	// Initialize multi-output system
 	multiOutputManager = std::make_shared<LogOutputManager>();
 	multiOutputConfig = std::make_unique<MultiOutputLogConfig>();
@@ -60,7 +61,6 @@ LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStra
 
 LightLogWrite_Impl::~LightLogWrite_Impl()
 {
-	StopCompressionWorker();
 	CloseLogStream();
 	
 	// Cleanup multi-output system
@@ -588,10 +588,10 @@ void LightLogWrite_Impl::PerformLogRotation(const std::wstring& reason)
 		
 		std::filesystem::rename(currentLogFileName, tempArchivePath);
 		
-		// 如果启用压缩，使用异步压缩队列
-		if (rotationConfig.enableCompression) {
-			// 将压缩任务加入队列，避免阻塞
-			EnqueueCompressionTask(tempArchivePath.wstring(), archiveFileName);
+		// 如果启用压缩，使用LogCompressor进行异步压缩
+		if (rotationConfig.enableCompression && logCompressor_) {
+			// 使用LogCompressor进行异步压缩
+			logCompressor_->CompressAsync(tempArchivePath.wstring(), archiveFileName);
 		} else {
 			std::filesystem::rename(tempArchivePath, archiveFileName);
 		}
@@ -625,48 +625,7 @@ void LightLogWrite_Impl::PerformLogRotation(const std::wstring& reason)
 	}
 }
 
-bool LightLogWrite_Impl::CompressLogFile(const std::wstring& sourceFile, const std::wstring& targetFile)
-{
-	try {
-		// 将宽字符路径转换为UTF-8字符串
-		std::string sourceFileUtf8(sourceFile.begin(), sourceFile.end());
-		std::string targetFileUtf8(targetFile.begin(), targetFile.end());
-		
-		// 使用miniz创建ZIP文件
-		miniz_cpp::zip_file zipFile;
-		
-		// 读取源文件内容
-		std::ifstream source(sourceFileUtf8, std::ios::binary);
-		if (!source.is_open()) {
-			return false;
-		}
-		
-		// 获取文件内容
-		std::string fileContent((std::istreambuf_iterator<char>(source)),
-								std::istreambuf_iterator<char>());
-		source.close();
-		
-		// 提取源文件的文件名（用作ZIP内部文件名）
-		std::filesystem::path sourcePath(sourceFile);
-		std::string internalFileName = sourcePath.filename().string();
-		
-		// 将文件添加到ZIP
-		zipFile.writestr(internalFileName, fileContent);
-		
-		// 保存ZIP文件
-		zipFile.save(targetFileUtf8);
-		
-		return true;
-	}
-	catch (const std::exception& e) {
-		// 记录错误信息（可选）
-		// 这里可以添加日志记录
-		return false;
-	}
-	catch (...) {
-		return false;
-	}
-}
+
 
 std::wstring LightLogWrite_Impl::GenerateArchiveFileName(const std::wstring& baseFileName, const std::chrono::system_clock::time_point& timestamp)
 {
@@ -758,145 +717,13 @@ void LightLogWrite_Impl::CleanupOldArchives()
 	}
 }
 
-void LightLogWrite_Impl::StartCompressionWorker()
-{
-	stopCompressionWorker = false;
-	compressionWorkerThread = std::thread(&LightLogWrite_Impl::CompressionWorkerLoop, this);
-}
 
-void LightLogWrite_Impl::StopCompressionWorker()
-{
-	// 设置停止标志
-	stopCompressionWorker = true;
-	
-	// 通知工作线程
-	{
-		std::lock_guard<std::mutex> lock(compressionMutex);
-		compressionCondVar.notify_all();
-	}
-	
-	// 等待工作线程结束
-	if (compressionWorkerThread.joinable()) {
-		compressionWorkerThread.join();
-	}
-}
 
-void LightLogWrite_Impl::EnqueueCompressionTask(const std::wstring& sourceFile, const std::wstring& targetFile)
-{
-	CompressionTask task;
-	task.sourceFile = sourceFile;
-	task.targetFile = targetFile;
-	task.createdTime = std::chrono::system_clock::now();
-	
-	// 临时调试输出
-	std::wcout << L"[DEBUG] Enqueuing compression task: " << sourceFile << L" -> " << targetFile << std::endl;
-	
-	{
-		std::lock_guard<std::mutex> lock(compressionMutex);
-		compressionQueue.push(task);
-		std::wcout << L"[DEBUG] Compression task enqueued, queue size: " << compressionQueue.size() << std::endl;
-		compressionCondVar.notify_one();
-	}
-}
 
-void LightLogWrite_Impl::CompressionWorkerLoop()
-{
-	while (!stopCompressionWorker) {
-		CompressionTask task;
-		bool hasTask = false;
-		
-		// 从队列中获取任务
-		{
-			std::unique_lock<std::mutex> lock(compressionMutex);
-			compressionCondVar.wait(lock, [this] {
-				return !compressionQueue.empty() || stopCompressionWorker;
-			});
-			
-			if (stopCompressionWorker && compressionQueue.empty()) {
-				break;
-			}
-			
-			if (!compressionQueue.empty()) {
-				task = compressionQueue.front();
-				compressionQueue.pop();
-				hasTask = true;
-			}
-		}
-		
-		// 执行压缩任务
-		if (hasTask) {
-			try {
-				// 记录压缩开始时间（用于性能监控）
-				auto startTime = std::chrono::high_resolution_clock::now();
-				
-				// 执行压缩
-				bool success = CompressLogFile(task.sourceFile, task.targetFile);
-				
-				// 计算压缩耗时
-				auto endTime = std::chrono::high_resolution_clock::now();
-				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-				
-				if (success) {
-					// 压缩成功，删除原文件
-					std::filesystem::remove(task.sourceFile);
-					
-					// 可选：记录压缩统计信息
-					// std::wcout << L"Compression completed: " << task.targetFile 
-					//           << L" (took " << duration.count() << L"ms)" << std::endl;
-				} else {
-					// 压缩失败，保留原文件并重命名为目标文件名（但不压缩）
-					std::filesystem::path targetPath(task.targetFile);
-					targetPath.replace_extension(L".log");
-					std::filesystem::rename(task.sourceFile, targetPath);
-					
-					// 可选：记录错误信息
-					// std::wcerr << L"Compression failed for: " << task.sourceFile << std::endl;
-				}
-			}
-			catch (const std::exception& e) {
-				// 处理异常，保留原文件
-				try {
-					std::filesystem::path targetPath(task.targetFile);
-					targetPath.replace_extension(L".log");
-					if (std::filesystem::exists(task.sourceFile)) {
-						std::filesystem::rename(task.sourceFile, targetPath);
-					}
-				}
-				catch (...) {
-					// 重命名也失败了，至少不删除原文件
-				}
-			}
-		}
-	}
-	
-	// 处理剩余的压缩任务
-	while (!compressionQueue.empty()) {
-		CompressionTask task;
-		{
-			std::lock_guard<std::mutex> lock(compressionMutex);
-			if (!compressionQueue.empty()) {
-				task = compressionQueue.front();
-				compressionQueue.pop();
-			} else {
-				break;
-			}
-		}
-		
-		// 快速处理剩余任务
-		try {
-			if (CompressLogFile(task.sourceFile, task.targetFile)) {
-				std::filesystem::remove(task.sourceFile);
-			} else {
-				std::filesystem::path targetPath(task.targetFile);
-				targetPath.replace_extension(L".log");
-				std::filesystem::rename(task.sourceFile, targetPath);
-			}
-		}
-		catch (...) {
-			// 忽略异常，确保线程能正常退出
-		}
-	}
-}
+
+
+
+
 
 // Multi-output system implementation
 bool LightLogWrite_Impl::SaveMultiOutputConfigToJson(const std::wstring& configFilePath) {
@@ -947,5 +774,25 @@ void LightLogWrite_Impl::SetMultiOutputEnabled(bool enabled) {
 
 bool LightLogWrite_Impl::IsMultiOutputEnabled() const {
 	return multiOutputEnabled.load();
+}
+
+// Compression management methods
+void LightLogWrite_Impl::SetCompressor(std::shared_ptr<ILogCompressor> compressor) {
+	logCompressor_ = compressor;
+}
+
+std::shared_ptr<ILogCompressor> LightLogWrite_Impl::GetCompressor() const {
+	return logCompressor_;
+}
+
+CompressionStatistics LightLogWrite_Impl::GetCompressionStatistics() const {
+	if (logCompressor_) {
+		auto statisticalCompressor = std::dynamic_pointer_cast<IStatisticalLogCompressor>(logCompressor_);
+		if (statisticalCompressor) {
+			return statisticalCompressor->GetStatistics();
+		}
+	}
+	// Return empty statistics if no compressor or no statistical interface
+	return CompressionStatistics{};
 }
 
