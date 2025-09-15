@@ -1,6 +1,7 @@
 #include "../../include/log/RotationManagerFactory.h"
 #include "../../include/log/ILogRotationManager.h"
 #include "../../include/log/IRotationStrategy.h"
+#include "../../include/log/RotationStrategies.h"
 #include "../../include/log/ILogCompressor.h"
 #include <memory>
 #include <fstream>
@@ -27,10 +28,14 @@ public:
     explicit EnhancedRotationManager(const LogRotationConfig& config, 
                                     std::shared_ptr<ILogCompressor> compressor = nullptr) 
         : config_(config), isRunning_(false), compressor_(compressor), 
-          lastRotationTime_(std::chrono::system_clock::now()) {}
+          lastRotationTime_(std::chrono::system_clock::now()) {
+        // 根据配置创建相应的轮转策略
+        UpdateRotationStrategy();
+    }
 
     void SetConfig(const LogRotationConfig& config) override {
         config_ = config;
+        UpdateRotationStrategy();
     }
 
     LogRotationConfig GetConfig() const override {
@@ -41,49 +46,39 @@ public:
                                        size_t fileSize) const override {
         RotationTrigger trigger;
         
-        if (config_.strategy == LogRotationStrategy::None) {
+        if (config_.strategy == LogRotationStrategy::None || !rotationStrategy_) {
             return trigger;
         }
         
-        // 检查文件大小限制
-        if (config_.strategy == LogRotationStrategy::Size || 
-            config_.strategy == LogRotationStrategy::SizeAndTime) {
-            if (fileSize >= config_.maxFileSizeMB * 1024 * 1024) {
-                trigger.sizeExceeded = true;
-                trigger.currentFileSize = fileSize;
-                trigger.reason = L"File size limit reached (" + std::to_wstring(fileSize / (1024 * 1024)) + L"MB)";
-            }
-        }
+        // 构建轮转上下文
+        RotationContext context;
+        context.currentFileName = currentFileName;
+        context.currentFileSize = fileSize;
+        context.lastRotationTime = lastRotationTime_;
+        context.currentTime = std::chrono::system_clock::now();
+        context.fileCreationTime = lastRotationTime_;  // 简化处理，使用上次轮转时间作为文件创建时间
+        context.manualTrigger = false;
         
-        // 检查时间间隔轮转
-        if (config_.strategy == LogRotationStrategy::Time || 
-            config_.strategy == LogRotationStrategy::SizeAndTime) {
-            auto now = std::chrono::system_clock::now();
-            auto timeSinceLastRotation = now - lastRotationTime_;
+        // 使用策略判断是否需要轮转
+        auto decision = rotationStrategy_->ShouldRotate(context);
+        
+        if (decision.shouldRotate) {
+            // 根据轮转原因设置相应的触发标志
+            std::wstring reason = decision.reason;
             
-            bool shouldRotateByTime = false;
-            switch (config_.timeInterval) {
-                case TimeRotationInterval::Hourly:
-                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(1);
-                    break;
-                case TimeRotationInterval::Daily:
-                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24);
-                    break;
-                case TimeRotationInterval::Weekly:
-                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24 * 7);
-                    break;
-                case TimeRotationInterval::Monthly:
-                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24 * 30);
-                    break;
+            if (reason.find(L"size") != std::wstring::npos || 
+                reason.find(L"Size") != std::wstring::npos) {
+                trigger.sizeExceeded = true;
             }
             
-            if (shouldRotateByTime) {
+            if (reason.find(L"time") != std::wstring::npos || 
+                reason.find(L"Time") != std::wstring::npos ||
+                reason.find(L"interval") != std::wstring::npos) {
                 trigger.timeReached = true;
-                if (!trigger.reason.empty()) {
-                    trigger.reason += L" and ";
-                }
-                trigger.reason += L"Time interval reached";
             }
+            
+            trigger.currentFileSize = fileSize;
+            trigger.reason = decision.reason;
         }
         
         return trigger;
@@ -451,6 +446,26 @@ private:
     bool isRunning_;
     std::shared_ptr<ILogCompressor> compressor_;
     std::chrono::system_clock::time_point lastRotationTime_;
+    std::unique_ptr<IRotationStrategy> rotationStrategy_;
+    
+    // 更新轮转策略
+    void UpdateRotationStrategy() {
+        switch (config_.strategy) {
+            case LogRotationStrategy::Size:
+                rotationStrategy_ = std::make_unique<SizeBasedRotationStrategy>();
+                break;
+            case LogRotationStrategy::Time:
+                rotationStrategy_ = std::make_unique<TimeBasedRotationStrategy>();
+                break;
+            case LogRotationStrategy::SizeAndTime:
+                rotationStrategy_ = std::make_unique<CompositeRotationStrategy>();
+                break;
+            case LogRotationStrategy::None:
+            default:
+                rotationStrategy_.reset();
+                break;
+        }
+    }
     
     // 检查磁盘空间是否足够进行轮转操作
     bool CheckDiskSpace(const std::wstring& filePath) const {
