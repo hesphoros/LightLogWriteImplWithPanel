@@ -55,6 +55,11 @@
 #include <memory>
 #include <functional>
 #include <list>
+#include <future>
+
+ // Include new rotation system headers
+#include "ILogRotationManager.h"
+#include "RotationManagerFactory.h"
 
 // Forward declarations
 class UniConv;
@@ -62,6 +67,7 @@ class LogOutputManager;
 class ILogOutput;
 class ILogCompressor;
 class LogCompressor;
+class ILogRotationManager;
 struct MultiOutputLogConfig;
 struct CompressionStatistics;
 
@@ -107,7 +113,6 @@ enum class LogQueueOverflowStrategy {
 	Block,      /*!< Blocked waiting           */
 	DropOldest  /*!< Drop the oldest log entry */
 };
-
 
 /**
  * @brief Enum for log levels
@@ -164,37 +169,8 @@ using LogCallback = std::function<void(const LogCallbackInfo& callbackInfo)>;
  */
 using CallbackHandle = size_t;
 
-/**
- * @brief Log rotation strategy enum
- */
-enum class LogRotationStrategy {
-	None,           /*!< No rotation */
-	Size,           /*!< Rotate by file size */
-	Time,           /*!< Rotate by time interval */
-	SizeAndTime     /*!< Rotate by both size and time */
-};
-
-/**
- * @brief Time rotation interval enum
- */
-enum class TimeRotationInterval {
-	Hourly,         /*!< Rotate every hour */
-	Daily,          /*!< Rotate every day */
-	Weekly,         /*!< Rotate every week */
-	Monthly         /*!< Rotate every month */
-};
-
-/**
- * @brief Log rotation configuration
- */
-struct LogRotationConfig {
-	LogRotationStrategy strategy = LogRotationStrategy::None;        /*!< Rotation strategy */
-	size_t maxFileSizeMB = 10;                                      /*!< Max file size in MB */
-	TimeRotationInterval timeInterval = TimeRotationInterval::Daily; /*!< Time rotation interval */
-	size_t maxArchiveFiles = 30;                                     /*!< Max number of archive files to keep */
-	bool enableCompression = true;                                   /*!< Enable compression for archived files */
-	std::wstring archiveDirectory = L"";                             /*!< Archive directory (empty = same as log dir) */
-};
+// LogRotationStrategy, TimeRotationInterval, and LogRotationConfig
+// are now defined in ILogRotationManager.h
 
 /**
  * @brief Implementation of the LightLogWrite class
@@ -239,7 +215,6 @@ public:
 		*/
 	void SetLogsFileName(const std::string& sFilename);
 
-
 	void SetLogsFileName(const std::u16string& sFilename);
 
 	/**
@@ -255,7 +230,6 @@ public:
 	void SetLastingsLogs(const std::wstring& sFilePath, const std::wstring& sBaseName);
 
 	void SetLastingsLogs(const std::u16string& sFilePath, const std::u16string& sBaseName);
-
 
 	void SetLastingsLogs(const std::string& sFilePath, const std::string& sBaseName);
 
@@ -279,7 +253,6 @@ public:
 	void WriteLogContent(const std::wstring& sTypeVal, const std::wstring& sMessage);
 
 	void WriteLogContent(const std::string& sTypeVal, const std::string& sMessage);
-
 
 	void WriteLogContent(const std::u16string& sTypeVal, const std::u16string& sMessage);
 
@@ -351,6 +324,13 @@ public:
 	void ForceLogRotation();
 
 	/**
+	 * @brief Force log rotation asynchronously
+	 * @return Future that can be used to wait for rotation completion
+	 * @details Performs rotation in background without blocking the caller
+	 */
+	std::future<bool> ForceLogRotationAsync();
+
+	/**
 	 * @brief Get current log file size in bytes
 	 * @return Current log file size, or 0 if no active log file
 	 */
@@ -362,17 +342,29 @@ public:
 	 */
 	void CleanupOldArchives();
 
-		/**
-	 * @brief Sets the minimum log level for logging
-	 * @param level The minimum log level to be set
-	 * @details This function sets the minimum log level for logging.
-	 * * Log messages with a lower severity than this level will be ignored.
+	/**
+	 * @brief Get number of pending rotation tasks
+	 * @return Number of rotation tasks waiting to be processed
 	 */
+	size_t GetPendingRotationTasks() const;
+
+	/**
+	 * @brief Cancel all pending rotation tasks
+	 * @return Number of tasks that were cancelled
+	 */
+	size_t CancelPendingRotationTasks();
+
+	/**
+ * @brief Sets the minimum log level for logging
+ * @param level The minimum log level to be set
+ * @details This function sets the minimum log level for logging.
+ * * Log messages with a lower severity than this level will be ignored.
+ */
 	void     SetMinLogLevel(LogLevel level) { eMinLogLevel = level; }
 	LogLevel GetMinLogLevel() const { return eMinLogLevel; }
 
 	// 宏定义用于简化重复的日志函数声明
-	#define DECLARE_LOG_FUNCTIONS(FuncName) \
+#define DECLARE_LOG_FUNCTIONS(FuncName) \
 		void WriteLog##FuncName(const std::string& sMessage); \
 		void WriteLog##FuncName(const std::wstring& sMessage);
 
@@ -387,7 +379,7 @@ public:
 	DECLARE_LOG_FUNCTIONS(Emergency)
 	DECLARE_LOG_FUNCTIONS(Fatal)
 
-	#undef DECLARE_LOG_FUNCTIONS
+#undef DECLARE_LOG_FUNCTIONS
 
 private:
 
@@ -399,7 +391,6 @@ private:
 	 */
 	std::wstring LogLevelToWString(LogLevel level) const;
 
-
 	/**
 	 * @brief Converts a LogLevel enum to its corresponding string representation
 	 * @param level The LogLevel enum value to be converted
@@ -408,7 +399,7 @@ private:
 	 * * For example, LogLevel::Info will be converted to "INFO".
 	 */
 	std::string LogLevelToString(LogLevel level) const;
-	
+
 	/**
 	* @brief Builds the output log file name based on the current date and time
 	* @return A wide string representing the log file name
@@ -416,7 +407,6 @@ private:
 	* * The format is "BaseName_YYYY_MM_DD_AM/PM.log", where BaseName is the base name set by SetLastingsLogs.
 	*/
 	std::wstring BuildLogFileOut();
-
 
 	/**
 	* @brief Closes the log stream and stops the logging thread
@@ -596,8 +586,7 @@ public:
 private:
 
 	static const wchar_t* LOG_LEVEL_STRINGS_W[];
-	static const char*    LOG_LEVEL_STRINGS_A[];
-
+	static const char* LOG_LEVEL_STRINGS_A[];
 
 	//------------------------------------------------------------------------------------------------
 	// Section Name: Private Members @{                                                              +
@@ -618,7 +607,7 @@ private:
 	std::atomic<size_t>             lastReportedDiscardCount;  /*!< Last reported discard count      */
 	std::atomic<size_t>             reportInterval;            /*!< Report interval                  */
 	LogLevel                        eMinLogLevel;              /*!< Minimum log level[default: TRACE]*/
-	
+
 	// Callback management members
 	struct CallbackEntry {
 		CallbackHandle              handle;                    /*!< Unique handle for the callback   */
@@ -628,18 +617,16 @@ private:
 	std::list<CallbackEntry>        pLogCallbacks;             /*!< List of registered callbacks     */
 	mutable std::mutex              pCallbackMutex;            /*!< Mutex for callback list          */
 	std::atomic<CallbackHandle>     pNextCallbackHandle;       /*!< Next available callback handle   */
-	
-	// Log rotation members
-	LogRotationConfig               rotationConfig;            /*!< Log rotation configuration       */
-	std::wstring                    currentLogFileName;        /*!< Current active log file name     */
-	std::chrono::system_clock::time_point lastRotationTime;    /*!< Last rotation timestamp          */
+
+	// Log rotation members - using new modular rotation system
+	std::unique_ptr<ILogRotationManager> rotationManager_;    /*!< Modular rotation manager         */
 	mutable std::mutex              rotationMutex;             /*!< Mutex for rotation operations    */
-	std::atomic<bool>               forceRotationRequested;    /*!< Manual rotation request flag     */
-	
+	std::wstring                    currentLogFileName;        /*!< Current active log file name     */
+
 	// Compression system members
 	std::shared_ptr<ILogCompressor> logCompressor_;           /*!< Log compressor instance          */
 	mutable std::mutex              compressorMutex_;         /*!< Mutex for compressor operations  */
-	
+
 	// Multi-output system members
 	std::shared_ptr<LogOutputManager> multiOutputManager;     /*!< Multi-output manager             */
 	std::atomic<bool>               multiOutputEnabled;       /*!< Multi-output enabled flag        */
@@ -650,6 +637,4 @@ private:
 	//------------------------------------------------------------------------------------------------
 };
 
-
 #endif // !INCLUDE_LIGHTLOGWRITEIMPL_HPP_
-

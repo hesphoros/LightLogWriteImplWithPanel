@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="轮转系统">
+      <UniqueIdentifier>{B8F5D8A4-12C6-4F5A-9A3B-8E7F2D1A5B3C}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -41,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationManagerFactory.cpp">
+      <Filter>轮转系统</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -85,6 +91,36 @@
     </ClInclude>
     <ClInclude Include="include\log\UniConv.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogRotationManager.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\IRotationStrategy.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationStrategies.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\TimeCalculator.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationStateMachine.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\TransactionalRotation.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationPreChecker.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\AsyncRotationManager.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationErrorHandler.h">
+      <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationManagerFactory.h">
+      <Filter>轮转系统</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

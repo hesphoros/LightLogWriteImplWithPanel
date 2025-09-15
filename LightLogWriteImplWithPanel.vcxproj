@@ -149,6 +149,7 @@
     <ClCompile Include="src\log\LogCompressor.cpp" />
     <ClCompile Include="src\log\LogOutputManager.cpp" />
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp" />
+    <ClCompile Include="src\log\RotationManagerFactory.cpp" />
     <ClCompile Include="src\log\UniConv.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +169,16 @@
     <ClInclude Include="include\log\PerformanceProfiler.h" />
     <ClInclude Include="include\log\singleton.h" />
     <ClInclude Include="include\log\UniConv.h" />
+    <ClInclude Include="include\log\ILogRotationManager.h" />
+    <ClInclude Include="include\log\IRotationStrategy.h" />
+    <ClInclude Include="include\log\RotationStrategies.h" />
+    <ClInclude Include="include\log\TimeCalculator.h" />
+    <ClInclude Include="include\log\RotationStateMachine.h" />
+    <ClInclude Include="include\log\TransactionalRotation.h" />
+    <ClInclude Include="include\log\RotationPreChecker.h" />
+    <ClInclude Include="include\log\AsyncRotationManager.h" />
+    <ClInclude Include="include\log\RotationErrorHandler.h" />
+    <ClInclude Include="include\log\RotationManagerFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\log\encodings.inc" />
