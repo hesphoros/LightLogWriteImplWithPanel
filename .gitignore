@@ -1,0 +1,58 @@
+# IDE配置文件
+*.idea
+.vs/
+.vscode/
+*.vscode
+.idea/
+# Visual Studio用户特定文件
+*.vcxproj.user
+*.suo
+*.sdf
+*.opensdf
+
+# 构建输出文件
+*.obj
+*.o
+*.exe
+*.dll
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.a
+*.so
+*.dylib
+
+# 构建目录
+LightLog.4a4c1419/
+x64/
+Debug/
+Release/
+bin/
+obj/
+
+# 运行时生成的文件
+logs/
+*.log
+*.tmp
+temp/
+
+# Windows系统文件
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# 编译器和链接器生成的文件
+*.tlog
+*.recipe
+*.lastbuildstate
+*.cache
+*.CppClean.log
+*.FileListAbsolute.txt
+*.vcxproj.FileListAbsolute.txt
+*.applocal.log
+
+# Package管理器文件
+packages/
+vcpkg_installed/
+LightLog.4a4c1419/
