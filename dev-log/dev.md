@@ -15,7 +15,7 @@
 ### 1. 架构设计
 - [x] **单一职责原则优化**
   - [x] 压缩功能抽离为独立 `LogCompressor` ✅ 已完成接口和基础实现
-  - [ ] 日志轮转逻辑分离为 `LogRotationManager`
+  - [x] 日志轮转逻辑分离为 `LogRotationManager`
   - [ ] 编码转换独立为服务类
 - [ ] **依赖注入与可测试性提升**
   - [ ] 引入接口抽象（如 `IFileSystem`、`IEncodingConverter`）

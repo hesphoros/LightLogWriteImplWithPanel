@@ -156,6 +156,7 @@
     <ClInclude Include="include\log\BaseLogOutput.h" />
     <ClInclude Include="include\log\BasicLogFormatter.h" />
     <ClInclude Include="include\log\ConsoleLogOutput.h" />
+    <ClInclude Include="include\log\FileLogOutput.h" />
     <ClInclude Include="include\log\iconv.h" />
     <ClInclude Include="include\log\ILogFilter.h" />
     <ClInclude Include="include\log\ILogFormatter.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="include\log\LogCompressor.h" />
     <ClInclude Include="include\log\ILogCompressor.h" />
     <ClInclude Include="include\log\LogOutputManager.h" />
+    <ClInclude Include="include\log\LogRotationManager.h" />
     <ClInclude Include="include\log\MultiOutputLogConfig.h" />
     <ClInclude Include="include\log\NetworkLogOutput.h" />
     <ClInclude Include="include\log\PerformanceProfiler.h" />

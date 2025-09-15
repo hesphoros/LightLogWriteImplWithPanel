@@ -55,12 +55,12 @@ LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStra
 {
 	// Initialize new rotation system with default async configuration
 	LogRotationConfig defaultConfig;
-	defaultConfig.strategy = LogRotationStrategy::None;
-	defaultConfig.enableAsync = true;
-	defaultConfig.asyncWorkerCount = 2;
-	defaultConfig.enablePreCheck = true;
-	defaultConfig.enableTransaction = true;
-	defaultConfig.enableStateMachine = true;
+	defaultConfig.strategy 				= LogRotationStrategy::None; // 日志轮转策略枚举
+	defaultConfig.enableAsync 			= true; // 启用异步轮转
+	defaultConfig.asyncWorkerCount 		= 2; // 异步工作线程数
+	defaultConfig.enablePreCheck 		= true;  // 启用预检查
+	defaultConfig.enableTransaction 	= true;  // 启用事务
+	defaultConfig.enableStateMachine 	= true;  // 启用状态机
 	rotationManager_ = RotationManagerFactory::CreateAsyncRotationManager(defaultConfig, logCompressor_);
 
 	// Start the rotation manager
@@ -72,7 +72,7 @@ LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStra
 
 	// Initialize multi-output system
 	multiOutputManager = std::make_shared<LogOutputManager>();
-	multiOutputConfig = std::make_unique<MultiOutputLogConfig>();
+	multiOutputConfig  = std::make_unique<MultiOutputLogConfig>();
 }
 
 LightLogWrite_Impl::~LightLogWrite_Impl()

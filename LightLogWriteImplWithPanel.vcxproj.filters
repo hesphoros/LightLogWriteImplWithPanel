@@ -48,6 +48,9 @@
     <ClCompile Include="src\log\RotationManagerFactory.cpp">
       <Filter>轮转系统</Filter>
     </ClCompile>
+    <ClCompile Include="src\log\LogCompressor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\log\BaseLogOutput.h">
@@ -121,6 +124,18 @@
     </ClInclude>
     <ClInclude Include="include\log\RotationManagerFactory.h">
       <Filter>轮转系统</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LogCompressor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogCompressor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\FileLogOutput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LogRotationManager.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

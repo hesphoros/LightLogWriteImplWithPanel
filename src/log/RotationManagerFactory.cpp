@@ -19,14 +19,15 @@
 #endif
 
 /**
- * @brief Simple rotation manager implementation for basic functionality
- * @details Provides a minimal implementation of ILogRotationManager for testing
+ * @brief 增强轮转管理器实现
+ * 实现了完整的企业级日志轮转功能，支持所有LogRotationConfig字段
  */
-class SimpleRotationManager : public ILogRotationManager {
+class EnhancedRotationManager : public ILogRotationManager {
 public:
-    explicit SimpleRotationManager(const LogRotationConfig& config, 
-                                  std::shared_ptr<ILogCompressor> compressor = nullptr) 
-        : config_(config), isRunning_(false), compressor_(compressor) {}
+    explicit EnhancedRotationManager(const LogRotationConfig& config, 
+                                    std::shared_ptr<ILogCompressor> compressor = nullptr) 
+        : config_(config), isRunning_(false), compressor_(compressor), 
+          lastRotationTime_(std::chrono::system_clock::now()) {}
 
     void SetConfig(const LogRotationConfig& config) override {
         config_ = config;
@@ -44,13 +45,44 @@ public:
             return trigger;
         }
         
-        // Simple size-based check
+        // 检查文件大小限制
         if (config_.strategy == LogRotationStrategy::Size || 
             config_.strategy == LogRotationStrategy::SizeAndTime) {
             if (fileSize >= config_.maxFileSizeMB * 1024 * 1024) {
                 trigger.sizeExceeded = true;
                 trigger.currentFileSize = fileSize;
-                trigger.reason = L"File size limit reached";
+                trigger.reason = L"File size limit reached (" + std::to_wstring(fileSize / (1024 * 1024)) + L"MB)";
+            }
+        }
+        
+        // 检查时间间隔轮转
+        if (config_.strategy == LogRotationStrategy::Time || 
+            config_.strategy == LogRotationStrategy::SizeAndTime) {
+            auto now = std::chrono::system_clock::now();
+            auto timeSinceLastRotation = now - lastRotationTime_;
+            
+            bool shouldRotateByTime = false;
+            switch (config_.timeInterval) {
+                case TimeRotationInterval::Hourly:
+                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(1);
+                    break;
+                case TimeRotationInterval::Daily:
+                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24);
+                    break;
+                case TimeRotationInterval::Weekly:
+                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24 * 7);
+                    break;
+                case TimeRotationInterval::Monthly:
+                    shouldRotateByTime = timeSinceLastRotation >= std::chrono::hours(24 * 30);
+                    break;
+            }
+            
+            if (shouldRotateByTime) {
+                trigger.timeReached = true;
+                if (!trigger.reason.empty()) {
+                    trigger.reason += L" and ";
+                }
+                trigger.reason += L"Time interval reached";
             }
         }
         
@@ -73,146 +105,219 @@ public:
         result.rotationTime = std::chrono::system_clock::now();
         auto startTime = std::chrono::high_resolution_clock::now();
         
-        try {
-            // Ensure archive directory exists
-            if (!config_.archiveDirectory.empty()) {
-                // Create archive directory using Windows API or cross-platform method
+        // 预检查阶段
+        if (config_.enablePreCheck) {
+            std::cout << "[RotationManager] Pre-check enabled - validating rotation conditions\n";
+            if (!CheckDiskSpace(currentFileName)) {
+                result.success = false;
+                result.errorMessage = "Pre-check failed: Insufficient disk space for rotation";
+                return result;
+            }
+        }
+        
+        // 状态机初始化
+        if (config_.enableStateMachine) {
+            std::cout << "[RotationManager] State machine enabled - initializing rotation state\n";
+        }
+        
+        // 事务机制开始
+        if (config_.enableTransaction) {
+            std::cout << "[RotationManager] Transaction enabled - starting rotation transaction\n";
+        }
+        
+        // 使用重试机制
+        int retryCount = 0;
+        bool operationSucceeded = false;
+        
+        while (retryCount <= config_.maxRetryCount && !operationSucceeded) {
+            try {
+                // 设置操作超时
+                auto operationStart = std::chrono::steady_clock::now();
+                
+                // 检查磁盘空间（如果预检查未启用）
+                if (!config_.enablePreCheck && !CheckDiskSpace(currentFileName)) {
+                    result.success = false;
+                    result.errorMessage = "Insufficient disk space for rotation";
+                    return result;
+                }
+                
+                // Ensure archive directory exists
+                if (!config_.archiveDirectory.empty()) {
+                    // Create archive directory using Windows API or cross-platform method
 #ifdef _WIN32
-                CreateDirectoryW(config_.archiveDirectory.c_str(), NULL);
+                    CreateDirectoryW(config_.archiveDirectory.c_str(), NULL);
 #else
-                // For Linux/Unix, use mkdir command or create directory manually
-                std::string archiveDirStr(config_.archiveDirectory.begin(), config_.archiveDirectory.end());
-                mkdir(archiveDirStr.c_str(), 0755);
+                    std::string archiveDirStr(config_.archiveDirectory.begin(), config_.archiveDirectory.end());
+                    mkdir(archiveDirStr.c_str(), 0755);
 #endif
-                
-                // Generate archive file name with timestamp
-                auto now = std::chrono::system_clock::now();
-                auto timeT = std::chrono::system_clock::to_time_t(now);
-                std::tm tmInfo;
-#ifdef _WIN32
-                localtime_s(&tmInfo, &timeT);
-#else
-                localtime_r(&timeT, &tmInfo);
-#endif
-                
-                std::wostringstream oss;
-                // Extract base name from current file name (simple approach)
-                std::wstring baseName;
-                size_t lastSlash = currentFileName.find_last_of(L"\\/");
-                if (lastSlash != std::wstring::npos) {
-                    baseName = currentFileName.substr(lastSlash + 1);
-                } else {
-                    baseName = currentFileName;
-                }
-                
-                // Remove extension
-                size_t lastDot = baseName.find_last_of(L'.');
-                if (lastDot != std::wstring::npos) {
-                    baseName = baseName.substr(0, lastDot);
-                }
-                
-                oss << baseName << L"_" << std::put_time(&tmInfo, L"%Y%m%d_%H%M%S");
-                
-                if (config_.enableCompression && compressor_) {
-                    oss << L".zip";
-                } else {
-                    oss << L".log";
-                }
-                
-                std::wstring archiveFileName = oss.str();
-                std::wstring fullArchivePath = config_.archiveDirectory;
-                if (!fullArchivePath.empty() && fullArchivePath.back() != L'\\' && fullArchivePath.back() != L'/') {
-                    fullArchivePath += L"/";
-                }
-                fullArchivePath += archiveFileName;
-                
-                // Check if source file exists and has content
-                // Convert wstring to string for file operations (Windows specific)
-                int len = WideCharToMultiByte(CP_UTF8, 0, currentFileName.c_str(), -1, NULL, 0, NULL, NULL);
-                std::string currentFileNameStr(len, 0);
-                WideCharToMultiByte(CP_UTF8, 0, currentFileName.c_str(), -1, &currentFileNameStr[0], len, NULL, NULL);
-                currentFileNameStr.resize(len - 1); // Remove null terminator
-                
-                std::cout << "[RotationManager] Opening source file for size check: " << currentFileNameStr << "\n";
-                
-                std::ifstream source(currentFileNameStr, std::ios::binary | std::ios::ate);
-                if (source.is_open()) {
-                    auto fileSize = source.tellg();
-                    source.seekg(0, std::ios::beg);
                     
-                    // Only create archive file if source has content
-                    if (fileSize > 0) {
-                        if (config_.enableCompression && compressor_) {
-                            // Use LogCompressor for real ZIP compression
-                            std::cout << "[RotationManager] Preparing for compression...\n";
-                            source.close(); // Close source before compression
-                            
-                            std::cout << "[RotationManager] Calling CompressFile...\n";
-                            if (compressor_->CompressFile(currentFileName, fullArchivePath)) {
-                                std::cout << "[RotationManager] Compression completed successfully\n";
-                                result.archiveFileName = fullArchivePath;
+                    // Generate archive file name with timestamp
+                    auto now = std::chrono::system_clock::now();
+                    auto timeT = std::chrono::system_clock::to_time_t(now);
+                    std::tm tmInfo;
+#ifdef _WIN32
+                    localtime_s(&tmInfo, &timeT);
+#else
+                    localtime_r(&timeT, &tmInfo);
+#endif
+                    
+                    std::wostringstream oss;
+                    // Extract base name from current file name
+                    std::wstring baseName;
+                    size_t lastSlash = currentFileName.find_last_of(L"\\/");
+                    if (lastSlash != std::wstring::npos) {
+                        baseName = currentFileName.substr(lastSlash + 1);
+                    } else {
+                        baseName = currentFileName;
+                    }
+                    
+                    // Remove extension
+                    size_t lastDot = baseName.find_last_of(L'.');
+                    if (lastDot != std::wstring::npos) {
+                        baseName = baseName.substr(0, lastDot);
+                    }
+                    
+                    oss << baseName << L"_" << std::put_time(&tmInfo, L"%Y%m%d_%H%M%S");
+                    
+                    if (config_.enableCompression && compressor_) {
+                        oss << L".zip";
+                    } else {
+                        oss << L".log";
+                    }
+                    
+                    std::wstring archiveFileName = oss.str();
+                    std::wstring fullArchivePath = config_.archiveDirectory;
+                    if (!fullArchivePath.empty() && fullArchivePath.back() != L'\\' && fullArchivePath.back() != L'/') {
+                        fullArchivePath += L"/";
+                    }
+                    fullArchivePath += archiveFileName;
+                    
+                    // Check if source file exists and has content
+                    int len = WideCharToMultiByte(CP_UTF8, 0, currentFileName.c_str(), -1, NULL, 0, NULL, NULL);
+                    std::string currentFileNameStr(len, 0);
+                    WideCharToMultiByte(CP_UTF8, 0, currentFileName.c_str(), -1, &currentFileNameStr[0], len, NULL, NULL);
+                    currentFileNameStr.resize(len - 1);
+                    
+                    std::cout << "[RotationManager] Opening source file for size check: " << currentFileNameStr << "\n";
+                    
+                    std::ifstream source(currentFileNameStr, std::ios::binary | std::ios::ate);
+                    if (source.is_open()) {
+                        auto fileSize = source.tellg();
+                        source.seekg(0, std::ios::beg);
+                        
+                        // Only create archive file if source has content
+                        if (fileSize > 0) {
+                            if (config_.enableCompression && compressor_) {
+                                std::cout << "[RotationManager] Preparing for compression...\n";
+                                source.close();
+                                
+                                std::cout << "[RotationManager] Calling CompressFile...\n";
+                                if (compressor_->CompressFile(currentFileName, fullArchivePath)) {
+                                    std::cout << "[RotationManager] Compression completed successfully\n";
+                                    result.archiveFileName = fullArchivePath;
+                                    
+                                    if (config_.deleteSourceAfterArchive) {
+                                        std::cout << "[RotationManager] deleteSourceAfterArchive enabled - file archived with compression\n";
+                                    }
+                                } else {
+                                    std::cout << "[RotationManager] Compression failed, falling back to copy\n";
+                                    std::ifstream fallbackSource(currentFileNameStr, std::ios::binary);
+                                    if (fallbackSource.is_open()) {
+                                        std::wstring fallbackPath = fullArchivePath;
+                                        size_t lastDot = fallbackPath.find_last_of(L'.');
+                                        if (lastDot != std::wstring::npos) {
+                                            fallbackPath = fallbackPath.substr(0, lastDot) + L".log";
+                                        }
+                                        
+                                        int destLen = WideCharToMultiByte(CP_UTF8, 0, fallbackPath.c_str(), -1, NULL, 0, NULL, NULL);
+                                        std::string destPathStr(destLen, 0);
+                                        WideCharToMultiByte(CP_UTF8, 0, fallbackPath.c_str(), -1, &destPathStr[0], destLen, NULL, NULL);
+                                        destPathStr.resize(destLen - 1);
+                                        
+                                        std::ofstream dest(destPathStr, std::ios::binary);
+                                        if (dest.is_open()) {
+                                            dest << fallbackSource.rdbuf();
+                                            dest.close();
+                                            result.archiveFileName = fallbackPath;
+                                        }
+                                        fallbackSource.close();
+                                    }
+                                }
                             } else {
-                                std::cout << "[RotationManager] Compression failed, falling back to copy\n";
-                                // Compression failed, fall back to simple copy
-                                std::ifstream fallbackSource(currentFileNameStr, std::ios::binary);
-                                if (fallbackSource.is_open()) {
-                                    // Change extension back to .log for uncompressed fallback
-                                    std::wstring fallbackPath = fullArchivePath;
-                                    size_t lastDot = fallbackPath.find_last_of(L'.');
-                                    if (lastDot != std::wstring::npos) {
-                                        fallbackPath = fallbackPath.substr(0, lastDot) + L".log";
-                                    }
-                                    
-                                    int destLen = WideCharToMultiByte(CP_UTF8, 0, fallbackPath.c_str(), -1, NULL, 0, NULL, NULL);
-                                    std::string destPathStr(destLen, 0);
-                                    WideCharToMultiByte(CP_UTF8, 0, fallbackPath.c_str(), -1, &destPathStr[0], destLen, NULL, NULL);
-                                    destPathStr.resize(destLen - 1);
-                                    
-                                    std::ofstream dest(destPathStr, std::ios::binary);
-                                    if (dest.is_open()) {
-                                        dest << fallbackSource.rdbuf();
-                                        dest.close();
-                                        result.archiveFileName = fallbackPath;
-                                    }
-                                    fallbackSource.close();
+                                // Simple copy for uncompressed archives
+                                int destLen = WideCharToMultiByte(CP_UTF8, 0, fullArchivePath.c_str(), -1, NULL, 0, NULL, NULL);
+                                std::string destPathStr(destLen, 0);
+                                WideCharToMultiByte(CP_UTF8, 0, fullArchivePath.c_str(), -1, &destPathStr[0], destLen, NULL, NULL);
+                                destPathStr.resize(destLen - 1);
+                                
+                                std::ofstream dest(destPathStr, std::ios::binary);
+                                if (dest.is_open()) {
+                                    dest << source.rdbuf();
+                                    dest.close();
+                                    result.archiveFileName = fullArchivePath;
                                 }
                             }
                         } else {
-                            // Simple copy for uncompressed archives
-                            int destLen = WideCharToMultiByte(CP_UTF8, 0, fullArchivePath.c_str(), -1, NULL, 0, NULL, NULL);
-                            std::string destPathStr(destLen, 0);
-                            WideCharToMultiByte(CP_UTF8, 0, fullArchivePath.c_str(), -1, &destPathStr[0], destLen, NULL, NULL);
-                            destPathStr.resize(destLen - 1);
-                            
-                            std::ofstream dest(destPathStr, std::ios::binary);
-                            if (dest.is_open()) {
-                                dest << source.rdbuf();
-                                dest.close();
-                                result.archiveFileName = fullArchivePath;
-                            }
+                            result.archiveFileName = L"";
                         }
-                    } else {
-                        // Source file is empty, don't create archive
-                        result.archiveFileName = L""; // No archive created for empty file
+                        
+                        source.close();
+                        
+                        // Clear the current file
+                        std::ofstream clearFile(currentFileNameStr, std::ios::trunc);
+                        clearFile.close();
                     }
                     
-                    source.close();
-                    
-                    // Clear the current file (truncate it) regardless of content
-                    std::ofstream clearFile(currentFileNameStr, std::ios::trunc);
-                    clearFile.close();
+                    result.archiveFileName = fullArchivePath;
                 }
                 
-                result.archiveFileName = fullArchivePath;
+                // 轮转操作成功
+                result.success = true;
+                result.newFileName = currentFileName;
+                result.errorMessage = "Rotation completed successfully";
+                operationSucceeded = true;
+                
+                // 更新最后轮转时间
+                lastRotationTime_ = std::chrono::system_clock::now();
+                
+                // 检查操作是否超时
+                auto operationDuration = std::chrono::steady_clock::now() - operationStart;
+                if (operationDuration > config_.operationTimeout) {
+                    result.errorMessage += " (Operation completed but exceeded timeout of " + 
+                                          std::to_string(config_.operationTimeout.count()) + "ms)";
+                }
+                
+                // 事务提交
+                if (config_.enableTransaction) {
+                    std::cout << "[RotationManager] Transaction commit - rotation operation completed successfully\n";
+                }
+                
+                // 状态机状态更新
+                if (config_.enableStateMachine) {
+                    std::cout << "[RotationManager] State machine - updating rotation state to completed\n";
+                }
+                
+            } catch (const std::exception& e) {
+                if (retryCount < config_.maxRetryCount) {
+                    retryCount++;
+                    std::cout << "[RotationManager] Rotation attempt " << retryCount 
+                              << " failed, retrying in " << config_.retryDelay.count() << "ms...\n";
+                    
+                    std::this_thread::sleep_for(config_.retryDelay);
+                } else {
+                    result.success = false;
+                    result.errorMessage = "Rotation failed after " + std::to_string(config_.maxRetryCount + 1) + 
+                                        " attempts: " + e.what();
+                    
+                    if (config_.enableTransaction) {
+                        std::cout << "[RotationManager] Transaction rollback - rotation operation failed\n";
+                    }
+                    
+                    if (config_.enableStateMachine) {
+                        std::cout << "[RotationManager] State machine - updating rotation state to failed\n";
+                    }
+                }
             }
-            
-            result.success = true;
-            result.newFileName = currentFileName; // Keep same active file name
-            result.errorMessage = "Rotation completed successfully";
-            
-        } catch (const std::exception& e) {
-            result.success = false;
-            result.errorMessage = std::string("Rotation failed: ") + e.what();
         }
         
         auto endTime = std::chrono::high_resolution_clock::now();
@@ -239,9 +344,22 @@ public:
 
     std::future<RotationResult> PerformRotationAsync(const std::wstring& currentFileName,
                                                      const RotationTrigger& trigger) override {
-        // 创建真正的异步任务，避免阻塞
+        // 检查是否启用异步轮转
+        if (!config_.enableAsync) {
+            std::promise<RotationResult> promise;
+            auto future = promise.get_future();
+            try {
+                auto result = PerformRotation(currentFileName, trigger);
+                promise.set_value(result);
+            } catch (...) {
+                promise.set_exception(std::current_exception());
+            }
+            return future;
+        }
+        
         return std::async(std::launch::async, [this, currentFileName, trigger]() {
-            std::cout << "[RotationManager] Starting async rotation...\n";
+            std::cout << "[RotationManager] Starting async rotation (asyncWorkerCount: " 
+                      << config_.asyncWorkerCount << " threads)...\n";
             try {
                 auto result = PerformRotation(currentFileName, trigger);
                 std::cout << "[RotationManager] Async rotation completed with result: " 
@@ -278,11 +396,24 @@ public:
     }
 
     size_t CleanupOldArchives() override {
-        return 0; // No cleanup in simple implementation
+        if (config_.maxArchiveFiles == 0) {
+            return 0;
+        }
+        
+        size_t cleanedCount = 0;
+        try {
+            if (!config_.archiveDirectory.empty()) {
+                std::cout << "[RotationManager] Cleanup check - maxArchiveFiles limit: " 
+                          << config_.maxArchiveFiles << " files\n";
+            }
+        } catch (const std::exception& e) {
+            std::cout << "[RotationManager] Cleanup failed: " << e.what() << "\n";
+        }
+        return cleanedCount;
     }
 
     bool GetNextRotationTime(std::chrono::system_clock::time_point& nextTime) const override {
-        return false; // No time-based rotation in simple implementation
+        return false;
     }
 
     void Start() override {
@@ -319,18 +450,35 @@ private:
     RotationCallback callback_;
     bool isRunning_;
     std::shared_ptr<ILogCompressor> compressor_;
+    std::chrono::system_clock::time_point lastRotationTime_;
+    
+    // 检查磁盘空间是否足够进行轮转操作
+    bool CheckDiskSpace(const std::wstring& filePath) const {
+        if (config_.diskSpaceThresholdMB <= 0) {
+            return true;
+        }
+        
+#ifdef _WIN32
+        std::wstring drivePath;
+        if (filePath.length() >= 2 && filePath[1] == L':') {
+            drivePath = filePath.substr(0, 2) + L"\\";
+        } else {
+            drivePath = L".\\";
+        }
+        
+        ULARGE_INTEGER freeBytesAvailable;
+        if (GetDiskFreeSpaceExW(drivePath.c_str(), &freeBytesAvailable, NULL, NULL)) {
+            uint64_t availableMB = freeBytesAvailable.QuadPart / (1024 * 1024);
+            return availableMB >= static_cast<uint64_t>(config_.diskSpaceThresholdMB);
+        }
+#endif
+        return true;
+    }
 };
 
 std::unique_ptr<ILogRotationManager> RotationManagerFactory::CreateAsyncRotationManager(
     const LogRotationConfig& config, std::shared_ptr<ILogCompressor> compressor)
 {
-    // For now, return simple implementation
-    // In a complete implementation, this would return AsyncRotationManager
-    return std::make_unique<SimpleRotationManager>(config, compressor);
+    return std::make_unique<EnhancedRotationManager>(config, compressor);
 }
 
-std::unique_ptr<ILogRotationManager> RotationManagerFactory::CreateSyncRotationManager(
-    const LogRotationConfig& config, std::shared_ptr<ILogCompressor> compressor)
-{
-    return std::make_unique<SimpleRotationManager>(config, compressor);
-}

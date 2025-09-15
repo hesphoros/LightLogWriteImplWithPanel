@@ -424,7 +424,8 @@ int main() {
         compressorConfig.compressionLevel = 6;                                      // 设置压缩级别为6（平衡压缩率和速度）
         auto compressor = std::make_shared<LogCompressor>(compressorConfig);
         compressor->Start();  // 启动压缩器服务
-        
+
+
         // 创建并配置日志记录器
         auto logger = std::make_shared<LightLogWrite_Impl>(
             10000,                              // 日志队列大小
