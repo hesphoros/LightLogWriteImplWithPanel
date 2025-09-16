@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LogCommon.h"
 #include "ILogOutput.h"
 #include "ILogFormatter.h"
 #include "ILogFilter.h"

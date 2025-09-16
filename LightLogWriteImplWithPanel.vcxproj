@@ -149,6 +149,9 @@
     <ClCompile Include="src\log\FileLogOutput.cpp" />
     <ClCompile Include="src\log\LightLogWriteImpl.cpp" />
     <ClCompile Include="src\log\LogCompressor.cpp" />
+    <ClCompile Include="src\log\LogFilters.cpp" />
+    <ClCompile Include="src\log\CompositeFilter.cpp" />
+    <ClCompile Include="src\log\FilterManager.cpp" />
     <ClCompile Include="src\log\LogOutputManager.cpp" />
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp" />
     <ClCompile Include="src\log\RotationErrorHandler.cpp" />
@@ -167,6 +170,12 @@
     <ClInclude Include="include\log\FileLogOutput.h" />
     <ClInclude Include="include\log\iconv.h" />
     <ClInclude Include="include\log\ILogFilter.h" />
+    <ClInclude Include="include\log\LogCommon.h" />
+    <ClInclude Include="include\log\ICompositeFilter.h" />
+    <ClInclude Include="include\log\IFilterManager.h" />
+    <ClInclude Include="include\log\LogFilters.h" />
+    <ClInclude Include="include\log\CompositeFilter.h" />
+    <ClInclude Include="include\log\FilterManager.h" />
     <ClInclude Include="include\log\ILogFormatter.h" />
     <ClInclude Include="include\log\ILogOutput.h" />
     <ClInclude Include="include\log\LightLogWriteImpl.h" />

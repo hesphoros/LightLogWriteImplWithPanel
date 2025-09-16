@@ -6,6 +6,7 @@
 #include <string>
 #include <filesystem>
 #include <iomanip>
+#include <regex>
 
 // 引入我们的日志系统头文件 
 #include "include/log/LightLogWriteImpl.h"
@@ -15,6 +16,12 @@
 #include "include/log/FileLogOutput.h"
 #include "include/log/BasicLogFormatter.h"
 #include "include/log/UniConv.h"
+
+// 引入新的过滤器系统头文件
+#include "include/log/ILogFilter.h"
+#include "include/log/LogFilters.h"
+#include "include/log/CompositeFilter.h"
+#include "include/log/FilterManager.h"
 
 // ==================== 日志测试框架工具类 ====================
 /**
@@ -342,7 +349,472 @@ public:
     }
 };
 
-// ==================== 模块5：性能测试 ====================
+// ==================== 模块5：过滤器系统测试 ====================
+/**
+ * @brief 过滤器系统测试类
+ * @details 测试新实现的过滤器系统，包括各种过滤器类型、组合过滤器、
+ *          过滤器管理器以及过滤器的配置和统计功能
+ */
+class FilterSystemTests {
+public:
+    /**
+     * @brief 运行过滤器系统测试
+     * @param framework 测试框架引用
+     * @details 测试各种过滤器的创建、配置、过滤功能和性能统计
+     */
+    static void RunTests(LogTestFramework& framework) {
+        framework.StartTest(L"Filter System Tests");
+        
+        try {
+            // 1. 测试过滤器管理器
+            TestFilterManager(framework);
+            
+            // 2. 测试基础过滤器
+            TestBasicFilters(framework);
+            
+            // 3. 测试组合过滤器
+            TestCompositeFilters(framework);
+            
+            // 4. 测试过滤器统计功能
+            TestFilterStatistics(framework);
+            
+            // 5. 测试过滤器配置功能
+            TestFilterConfiguration(framework);
+            
+            // 6. 测试过滤器与日志系统集成
+            TestFilterIntegration(framework);
+            
+        } catch (const std::exception& e) {
+            framework.TestFail(L"Filter system test exception: " + 
+                UniConv::GetInstance()->LocaleToWideString(e.what()));
+        }
+    }
+    
+private:
+    /**
+     * @brief 测试过滤器管理器功能
+     */
+    static void TestFilterManager(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Filter Manager ---" << std::endl;
+        
+        FilterManager manager;
+        
+        // 测试创建不同类型的过滤器
+        auto levelFilter = manager.CreateFilter(L"level");
+        if (levelFilter) {
+            framework.TestPass(L"Level filter creation successful");
+        } else {
+            framework.TestFail(L"Level filter creation failed");
+        }
+        
+        auto keywordFilter = manager.CreateFilter(L"keyword");
+        if (keywordFilter) {
+            framework.TestPass(L"Keyword filter creation successful");
+        } else {
+            framework.TestFail(L"Keyword filter creation failed");
+        }
+        
+        auto regexFilter = manager.CreateFilter(L"regex");
+        if (regexFilter) {
+            framework.TestPass(L"Regex filter creation successful");
+        } else {
+            framework.TestFail(L"Regex filter creation failed");
+        }
+        
+        auto rateLimitFilter = manager.CreateFilter(L"ratelimit");
+        if (rateLimitFilter) {
+            framework.TestPass(L"Rate limit filter creation successful");
+        } else {
+            framework.TestFail(L"Rate limit filter creation failed");
+        }
+    }
+    
+    /**
+     * @brief 测试基础过滤器功能
+     */
+    static void TestBasicFilters(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Basic Filters ---" << std::endl;
+        
+        // 创建测试用的日志信息
+        LogCallbackInfo infoLog;
+        infoLog.level = LogLevel::Info;
+        infoLog.message = L"This is an info message for testing";
+        
+        LogCallbackInfo errorLog;
+        errorLog.level = LogLevel::Error;
+        errorLog.message = L"This is an error message for testing";
+        
+        // 测试级别过滤器
+        auto levelFilter = std::make_unique<LevelFilter>(LogLevel::Warning);
+        
+        FilterOperation infoResult = levelFilter->ApplyFilter(infoLog, nullptr);
+        FilterOperation errorResult = levelFilter->ApplyFilter(errorLog, nullptr);
+        
+        if (infoResult == FilterOperation::Block && errorResult == FilterOperation::Allow) {
+            framework.TestPass(L"Level filter working correctly");
+        } else {
+            framework.TestFail(L"Level filter not working as expected");
+        }
+        
+        // 测试关键词过滤器
+        auto keywordFilter = std::make_unique<KeywordFilter>();
+        keywordFilter->AddIncludeKeyword(L"error");
+        keywordFilter->AddIncludeKeyword(L"warning");
+        
+        LogCallbackInfo keywordTestLog;
+        keywordTestLog.level = LogLevel::Info;
+        keywordTestLog.message = L"This contains error keyword";
+        
+        FilterOperation keywordResult = keywordFilter->ApplyFilter(keywordTestLog, nullptr);
+        FilterOperation normalResult = keywordFilter->ApplyFilter(infoLog, nullptr);
+        
+        if (keywordResult == FilterOperation::Allow && normalResult == FilterOperation::Block) {
+            framework.TestPass(L"Keyword filter working correctly");
+        } else {
+            framework.TestFail(L"Keyword filter not working as expected");
+        }
+        
+        // 测试正则表达式过滤器
+        auto regexFilter = std::make_unique<RegexFilter>(L".*test.*");
+        
+        LogCallbackInfo regexTestLog;
+        regexTestLog.level = LogLevel::Info;
+        regexTestLog.message = L"This message contains test keyword";
+        
+        FilterOperation regexResult = regexFilter->ApplyFilter(regexTestLog, nullptr);
+        FilterOperation noMatchResult = regexFilter->ApplyFilter(infoLog, nullptr);
+        
+        if (regexResult == FilterOperation::Allow && noMatchResult == FilterOperation::Block) {
+            framework.TestPass(L"Regex filter working correctly");
+        } else {
+            framework.TestFail(L"Regex filter not working as expected");
+        }
+        
+        // 测试限流过滤器
+        auto rateLimitFilter = std::make_unique<RateLimitFilter>(2, 2); // 每秒最多2条，突发2条
+        
+        FilterOperation firstResult = rateLimitFilter->ApplyFilter(infoLog, nullptr);
+        FilterOperation secondResult = rateLimitFilter->ApplyFilter(errorLog, nullptr);
+        FilterOperation thirdResult = rateLimitFilter->ApplyFilter(infoLog, nullptr); // 应该被限制
+        
+        if (firstResult == FilterOperation::Allow && secondResult == FilterOperation::Allow && thirdResult == FilterOperation::Block) {
+            framework.TestPass(L"Rate limit filter working correctly");
+        } else {
+            framework.TestFail(L"Rate limit filter not working as expected");
+        }
+    }
+    
+    /**
+     * @brief 测试组合过滤器功能
+     */
+    static void TestCompositeFilters(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Composite Filters ---" << std::endl;
+        
+        FilterManager manager;
+        
+        // 创建组合过滤器
+        auto compositeFilter = manager.CreateCompositeFilter(CompositionStrategy::AllMustPass);
+        
+        if (compositeFilter) {
+            // 添加子过滤器
+            auto levelFilter = std::make_unique<LevelFilter>(LogLevel::Info);
+            auto keywordFilter = std::make_unique<KeywordFilter>();
+            keywordFilter->AddIncludeKeyword(L"test");
+            
+            compositeFilter->AddFilter(std::move(levelFilter));
+            compositeFilter->AddFilter(std::move(keywordFilter));
+            
+            // 创建测试日志
+            LogCallbackInfo testLog;
+            testLog.level = LogLevel::Info;
+            testLog.message = L"This contains test keyword";
+            
+            LogCallbackInfo debugLog;
+            debugLog.level = LogLevel::Debug;
+            debugLog.message = L"This contains test keyword";
+            
+            FilterOperation infoResult = compositeFilter->ApplyFilter(testLog, nullptr);
+            FilterOperation debugResult = compositeFilter->ApplyFilter(debugLog, nullptr);
+            
+            // Info级别符合条件，Debug级别不符合
+            if (infoResult == FilterOperation::Allow && debugResult == FilterOperation::Block) {
+                framework.TestPass(L"Composite filter with AllMustPass strategy working correctly");
+            } else {
+                framework.TestFail(L"Composite filter not working as expected");
+            }
+        } else {
+            framework.TestFail(L"Failed to create composite filter");
+        }
+    }
+    
+    /**
+     * @brief 测试过滤器统计功能
+     */
+    static void TestFilterStatistics(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Filter Statistics ---" << std::endl;
+        
+        auto filter = std::make_unique<LevelFilter>(LogLevel::Warning);
+        
+        // 创建测试日志
+        LogCallbackInfo infoLog;
+        infoLog.level = LogLevel::Info;
+        infoLog.message = L"Info message";
+        
+        LogCallbackInfo warningLog;
+        warningLog.level = LogLevel::Warning;
+        warningLog.message = L"Warning message";
+        
+        // 执行过滤操作
+        filter->ApplyFilter(infoLog, nullptr);    // 应该被阻止
+        filter->ApplyFilter(warningLog, nullptr); // 应该通过
+        filter->ApplyFilter(infoLog, nullptr);    // 再次被阻止
+        
+        // 获取统计信息
+        auto stats = filter->GetStatistics();
+        
+        if (stats.totalProcessed == 3 && stats.blocked == 2 && stats.allowed == 1) {
+            framework.TestPass(L"Filter statistics working correctly - Total: " + 
+                std::to_wstring(stats.totalProcessed) + L", Blocked: " + 
+                std::to_wstring(stats.blocked) + L", Allowed: " + 
+                std::to_wstring(stats.allowed));
+        } else {
+            framework.TestFail(L"Filter statistics not working as expected - Total: " + 
+                std::to_wstring(stats.totalProcessed) + L", Blocked: " + 
+                std::to_wstring(stats.blocked) + L", Allowed: " + 
+                std::to_wstring(stats.allowed));
+        }
+        
+        // 测试重置统计
+        filter->ResetStatistics();
+        auto resetStats = filter->GetStatistics();
+        
+        if (resetStats.totalProcessed == 0 && resetStats.blocked == 0 && resetStats.allowed == 0) {
+            framework.TestPass(L"Filter statistics reset working correctly");
+        } else {
+            framework.TestFail(L"Filter statistics reset failed");
+        }
+    }
+    
+    /**
+     * @brief 测试过滤器配置功能
+     */
+    static void TestFilterConfiguration(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Filter Configuration ---" << std::endl;
+        
+        FilterManager manager;
+        
+        // 测试基本配置功能
+        auto filter = manager.CreateFilter(L"level", L"minLevel=Warning;enabled=true");
+        if (filter) {
+            framework.TestPass(L"Filter creation with configuration successful");
+            
+            // 验证配置是否正确应用
+            if (filter->IsEnabled()) {
+                framework.TestPass(L"Filter configuration applied correctly");
+            } else {
+                framework.TestFail(L"Filter configuration not applied correctly");
+            }
+        } else {
+            framework.TestFail(L"Filter creation with configuration failed");
+        }
+        
+        // 测试模板功能
+        manager.CreateFilterTemplate(L"test_template", L"level", L"minLevel=Error;enabled=true");
+        auto templateFilter = manager.CreateFromTemplate(L"test_template");
+        
+        if (templateFilter) {
+            framework.TestPass(L"Filter template creation and usage working correctly");
+        } else {
+            framework.TestFail(L"Filter template creation or usage failed");
+        }
+        
+        // 测试配置保存和加载
+        if (filter) {
+            // 将unique_ptr转换为shared_ptr
+            std::shared_ptr<ILogFilter> sharedFilter(filter.release());
+            manager.SaveFilterConfiguration(L"saved_config", sharedFilter);
+            auto loadedFilter = manager.LoadFilterConfiguration(L"saved_config");
+            
+            if (loadedFilter && loadedFilter->IsEnabled()) {
+                framework.TestPass(L"Filter configuration save/load working correctly");
+            } else {
+                framework.TestFail(L"Filter configuration save/load failed");
+            }
+        }
+    }
+
+    /**
+     * @brief 测试过滤器与日志系统的集成功能
+     */
+    static void TestFilterIntegration(LogTestFramework& framework) {
+        std::wcout << L"\n--- Testing Filter Integration with Log System ---" << std::endl;
+        
+        auto logger = framework.GetLogger();
+        
+        // 测试1：级别过滤器集成测试
+        {
+            std::wcout << L"\n* Testing Level Filter Integration *" << std::endl;
+            
+            // 创建级别过滤器，只允许ERROR及以上级别
+            auto levelFilter = std::make_unique<LevelFilter>(LogLevel::Error);
+            std::shared_ptr<ILogFilter> sharedFilter(levelFilter.release());
+            
+            // 设置过滤器到日志系统
+            logger->SetLogFilter(sharedFilter);
+            
+            // 验证过滤器是否设置成功
+            if (logger->HasLogFilter()) {
+                framework.TestPass(L"Log filter set successfully");
+            } else {
+                framework.TestFail(L"Failed to set log filter");
+                return;
+            }
+            
+            // 记录当前日志文件大小
+            size_t initialSize = logger->GetCurrentLogFileSize();
+            
+            // 写入不同级别的日志消息
+            logger->WriteLogInfo(L"This INFO message should be filtered out");
+            logger->WriteLogWarning(L"This WARNING message should be filtered out");
+            logger->WriteLogError(L"This ERROR message should pass through filter");
+            logger->WriteLogFatal(L"This FATAL message should pass through filter");
+            
+            // 等待日志写入完成
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            // 检查日志文件大小变化
+            size_t finalSize = logger->GetCurrentLogFileSize();
+            
+            if (finalSize > initialSize) {
+                framework.TestPass(L"Level filter integration working - only ERROR and FATAL messages written");
+            } else {
+                framework.TestFail(L"Level filter integration failed - no messages written");
+            }
+            
+            // 清除过滤器
+            logger->ClearLogFilter();
+        }
+        
+        // 测试2：关键词过滤器集成测试
+        {
+            std::wcout << L"\n* Testing Keyword Filter Integration *" << std::endl;
+            
+            // 创建关键词过滤器，只允许包含"IMPORTANT"的消息
+            auto keywordFilter = std::make_unique<KeywordFilter>();
+            keywordFilter->AddIncludeKeyword(L"IMPORTANT");
+            std::shared_ptr<ILogFilter> sharedFilter(keywordFilter.release());
+            
+            logger->SetLogFilter(sharedFilter);
+            
+            // 记录当前日志文件大小
+            size_t initialSize = logger->GetCurrentLogFileSize();
+            
+            // 写入包含和不包含关键词的消息
+            logger->WriteLogInfo(L"This is a normal message");
+            logger->WriteLogInfo(L"This is an IMPORTANT message");
+            logger->WriteLogInfo(L"Another normal message");
+            logger->WriteLogInfo(L"Another IMPORTANT notification");
+            
+            // 等待日志写入完成
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            // 检查日志文件大小变化
+            size_t finalSize = logger->GetCurrentLogFileSize();
+            
+            if (finalSize > initialSize) {
+                framework.TestPass(L"Keyword filter integration working - only IMPORTANT messages written");
+            } else {
+                framework.TestFail(L"Keyword filter integration failed");
+            }
+            
+            // 清除过滤器
+            logger->ClearLogFilter();
+        }
+        
+        // 测试3：限流过滤器集成测试
+        {
+            std::wcout << L"\n* Testing Rate Limit Filter Integration *" << std::endl;
+            
+            // 创建限流过滤器，每秒最多2条消息
+            auto rateLimitFilter = std::make_unique<RateLimitFilter>(2, 2);
+            std::shared_ptr<ILogFilter> sharedFilter(rateLimitFilter.release());
+            
+            logger->SetLogFilter(sharedFilter);
+            
+            // 记录当前日志文件大小
+            size_t initialSize = logger->GetCurrentLogFileSize();
+            
+            // 快速写入多条消息
+            for (int i = 0; i < 10; ++i) {
+                logger->WriteLogInfo(L"Rate limit test message " + std::to_wstring(i));
+            }
+            
+            // 等待日志写入完成
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            // 检查日志文件大小变化
+            size_t finalSize = logger->GetCurrentLogFileSize();
+            
+            if (finalSize > initialSize) {
+                framework.TestPass(L"Rate limit filter integration working - limited message throughput");
+            } else {
+                framework.TestFail(L"Rate limit filter integration failed");
+            }
+            
+            // 清除过滤器
+            logger->ClearLogFilter();
+        }
+        
+        // 测试4：组合过滤器集成测试
+        {
+            std::wcout << L"\n* Testing Composite Filter Integration *" << std::endl;
+            
+            // 创建组合过滤器：级别过滤器 + 关键词过滤器
+            auto levelFilter = std::make_unique<LevelFilter>(LogLevel::Warning);
+            auto keywordFilter = std::make_unique<KeywordFilter>();
+            keywordFilter->AddIncludeKeyword(L"CRITICAL");
+            
+            auto compositeFilter = std::make_unique<CompositeFilter>(L"TestComposite", CompositionStrategy::AllMustPass);
+            compositeFilter->AddFilter(std::move(levelFilter));
+            compositeFilter->AddFilter(std::move(keywordFilter));
+            
+            std::shared_ptr<ILogFilter> sharedFilter(compositeFilter.release());
+            logger->SetLogFilter(sharedFilter);
+            
+            // 记录当前日志文件大小
+            size_t initialSize = logger->GetCurrentLogFileSize();
+            
+            // 写入测试消息
+            logger->WriteLogInfo(L"INFO with CRITICAL keyword");          // 级别不够，被过滤
+            logger->WriteLogError(L"ERROR without keyword");              // 没有关键词，被过滤
+            logger->WriteLogError(L"ERROR with CRITICAL keyword");        // 满足所有条件，通过
+            
+            // 等待日志写入完成
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            // 检查日志文件大小变化
+            size_t finalSize = logger->GetCurrentLogFileSize();
+            
+            if (finalSize > initialSize) {
+                framework.TestPass(L"Composite filter integration working - only messages meeting all criteria written");
+            } else {
+                framework.TestFail(L"Composite filter integration failed");
+            }
+            
+            // 清除过滤器
+            logger->ClearLogFilter();
+        }
+        
+        // 验证过滤器清除
+        if (!logger->HasLogFilter()) {
+            framework.TestPass(L"Filter cleanup successful");
+        } else {
+            framework.TestFail(L"Filter cleanup failed");
+        }
+    }
+};
+
+// ==================== 模块6：性能测试 ====================
 /**
  * @brief 性能测试类
  * @details 测试日志系统的性能表现，包括批量写入速度和异步轮转性能
@@ -444,6 +916,7 @@ int main() {
         CallbackSystemTests::RunTests(framework);      // 回调系统测试
         RotationSystemTests::RunTests(framework);      // 轮转系统测试
         CompressionSystemTests::RunTests(framework);   // 压缩系统测试
+        FilterSystemTests::RunTests(framework);        // 过滤器系统测试
         PerformanceTests::RunTests(framework);         // 性能测试
         
         // 显示完整的测试总结报告

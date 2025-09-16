@@ -51,14 +51,15 @@ LightLogWrite_Impl::LightLogWrite_Impl(size_t maxQueueSize, LogQueueOverflowStra
 	eMinLogLevel{ LogLevel::Trace },
 	pNextCallbackHandle(1),
 	multiOutputEnabled(false),
-	logCompressor_(compressor)
+	logCompressor_(compressor),
+	logFilter_(nullptr)
 {
 	// Initialize new rotation system with default async configuration
 	LogRotationConfig defaultConfig;
 	defaultConfig.strategy 				= LogRotationStrategy::None; // 日志轮转策略枚举
 	defaultConfig.enableAsync 			= true; // 启用异步轮转
-	defaultConfig.asyncWorkerCount 		= 2; // 异步工作线程数
-	defaultConfig.enablePreCheck 		= true;  // 启用预检查
+	defaultConfig.asyncWorkerCount 		= 2; // 异步工作线程�?
+	defaultConfig.enablePreCheck 		= true;  // 启用预检�?
 	defaultConfig.enableTransaction 	= true;  // 启用事务
 	defaultConfig.enableStateMachine 	= true;  // 启用状态机
 	rotationManager_ = RotationManagerFactory::CreateAsyncRotationManager(defaultConfig, logCompressor_);
@@ -306,7 +307,7 @@ void LightLogWrite_Impl::CreateLogsFileUnlocked()
 	pLogFileStream.open(sOutFileName, std::ios::app);
 	pLogFileStream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 
-	// 更新当前日志文件名以便轮转使用
+	// 更新当前日志文件名以便轮转使�?
 	currentLogFileName = sOutFileName;
 }
 
@@ -333,7 +334,7 @@ void LightLogWrite_Impl::RunWriteThread()
 			}
 		}
 
-		// 在锁外检查并执行日志轮转，避免死锁
+		// 在锁外检查并执行日志轮转，避免死�?
 		CheckAndPerformRotation();
 		if (!sLogMessageInf.sLogContentVal.empty() && pLogFileStream.is_open()) {
 			pLogFileStream << sLogMessageInf.sLogTagNameVal << L"-//>>>" << GetCurrentTimer() << " : " << sLogMessageInf.sLogContentVal << "\n";
@@ -400,7 +401,26 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 
 	std::wstring levelStr = LogLevelToWString(level);
 
-	// 触发回调（在写入队列之前）
+	// 应用过滤器检查（在触发回调之前）
+	{
+		std::lock_guard<std::mutex> filterLock(filterMutex_);
+		if (logFilter_) {
+			LogCallbackInfo filterInfo;
+			filterInfo.level = level;
+			filterInfo.levelString = levelStr;
+			filterInfo.message = sMessage;
+			filterInfo.timestamp = std::chrono::system_clock::now();
+			filterInfo.threadId = std::this_thread::get_id();
+			filterInfo.formattedTime = GetCurrentTimer();
+
+			FilterOperation result = logFilter_->ApplyFilter(filterInfo, nullptr);
+			if (result == FilterOperation::Block) {
+				return; // 消息被过滤器阻止，直接返�?
+			}
+		}
+	}
+
+	// 触发回调（在写入队列之前�?
 	TriggerLogCallbacks(level, levelStr, sMessage);
 
 	// Write to multi-output system if enabled
@@ -459,7 +479,26 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, std::wstring&& sMessage
 
 	std::wstring levelStr = LogLevelToWString(level);
 
-	// 触发回调（在写入队列之前）
+	// 应用过滤器检查（在触发回调之前）
+	{
+		std::lock_guard<std::mutex> filterLock(filterMutex_);
+		if (logFilter_) {
+			LogCallbackInfo filterInfo;
+			filterInfo.level = level;
+			filterInfo.levelString = levelStr;
+			filterInfo.message = sMessage; // 这里我们需要复制消息用于过滤器检�?
+			filterInfo.timestamp = std::chrono::system_clock::now();
+			filterInfo.threadId = std::this_thread::get_id();
+			filterInfo.formattedTime = GetCurrentTimer();
+
+			FilterOperation result = logFilter_->ApplyFilter(filterInfo, nullptr);
+			if (result == FilterOperation::Block) {
+				return; // 消息被过滤器阻止，直接返�?
+			}
+		}
+	}
+
+	// 触发回调（在写入队列之前�?
 	TriggerLogCallbacks(level, levelStr, sMessage);
 
 	// Write to multi-output system if enabled
@@ -600,7 +639,7 @@ void LightLogWrite_Impl::TriggerLogCallbacks(LogLevel level, const std::wstring&
 			}
 			catch (...) {
 				// 忽略回调函数中的异常，避免影响日志系统的正常工作
-				// 在实际应用中，可以考虑记录这些异常到错误日志
+				// 在实际应用中，可以考虑记录这些异常到错误日�?
 			}
 		}
 	}
@@ -965,7 +1004,7 @@ std::wstring LightLogWrite_Impl::GenerateArchiveFileName(const std::wstring& bas
 		enableCompression = config.enableCompression;
 	}
 
-	// 构建归档文件名
+	// 构建归档文件�?
 	std::filesystem::path archivePath(archiveDir);
 	std::wstring archiveFileName = baseName + L"_" + oss.str() + extension;
 
@@ -1010,7 +1049,7 @@ void LightLogWrite_Impl::CleanupOldArchives()
 	// Fallback: basic cleanup logic for backward compatibility
 	auto config = GetLogRotationConfig();
 	if (config.maxArchiveFiles == 0) {
-		return;  // 无限制
+		return;  // 无限�?
 	}
 
 	try {
@@ -1019,7 +1058,7 @@ void LightLogWrite_Impl::CleanupOldArchives()
 			return;
 		}
 
-		// 收集所有归档文件
+		// 收集所有归档文�?
 		std::vector<std::filesystem::directory_entry> archiveFiles;
 		std::wstring pattern = sLogsBasedName + L"_";
 
@@ -1032,13 +1071,13 @@ void LightLogWrite_Impl::CleanupOldArchives()
 			}
 		}
 
-		// 按修改时间排序（最新的在前）
+		// 按修改时间排序（最新的在前�?
 		std::sort(archiveFiles.begin(), archiveFiles.end(),
 			[](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
 				return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
 			});
 
-		// 删除超出限制的文件
+		// 删除超出限制的文�?
 		if (archiveFiles.size() > config.maxArchiveFiles) {
 			for (size_t i = config.maxArchiveFiles; i < archiveFiles.size(); ++i) {
 				std::filesystem::remove(archiveFiles[i].path());
@@ -1122,4 +1161,26 @@ CompressionStatistics LightLogWrite_Impl::GetCompressionStatistics() const {
 	}
 	// Return empty statistics if no compressor or no statistical interface
 	return CompressionStatistics{};
+}
+
+// ==================== Filter System Implementation ====================
+
+void LightLogWrite_Impl::SetLogFilter(std::shared_ptr<ILogFilter> filter) {
+	std::lock_guard<std::mutex> lock(filterMutex_);
+	logFilter_ = filter;
+}
+
+std::shared_ptr<ILogFilter> LightLogWrite_Impl::GetLogFilter() const {
+	std::lock_guard<std::mutex> lock(filterMutex_);
+	return logFilter_;
+}
+
+void LightLogWrite_Impl::ClearLogFilter() {
+	std::lock_guard<std::mutex> lock(filterMutex_);
+	logFilter_.reset();
+}
+
+bool LightLogWrite_Impl::HasLogFilter() const {
+	std::lock_guard<std::mutex> lock(filterMutex_);
+	return logFilter_ != nullptr;
 }
