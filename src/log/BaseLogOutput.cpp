@@ -27,8 +27,13 @@ BaseLogOutput::~BaseLogOutput() {
 }
 
 LogOutputResult BaseLogOutput::WriteLog(const LogCallbackInfo& logInfo) {
+    std::wcout << L"[DEBUG] BaseLogOutput::WriteLog called for output: " << this->GetOutputName() << std::endl;
+    std::wcout << L"[DEBUG] enabled=" << (m_enabled.load() ? L"true" : L"false") 
+               << L", initialized=" << (m_initialized.load() ? L"true" : L"false") << std::endl;
+    
     // Check if output is enabled and initialized
     if (!m_enabled.load() || !m_initialized.load()) {
+        std::wcout << L"[DEBUG] Output not available - returning Unavailable" << std::endl;
         return LogOutputResult::Unavailable;
     }
 

@@ -908,6 +908,139 @@ int main() {
         logger->SetLastingsLogs(L"logs", L"app_log");     // 设置日志目录和文件名前缀
         logger->SetMinLogLevel(LogLevel::Trace);          // 设置最低日志级别为Trace
         
+        // ==================== 分离控制台功能测试 ====================
+        std::wcout << L"\n=== Testing Separate Console Feature ===" << std::endl;
+        
+        // 创建分离控制台输出
+        auto separateConsoleOutput = std::make_shared<ConsoleLogOutput>(
+            L"SeparateConsole",    // 输出名称
+            true,                   // 使用stderr输出错误级别
+            true,                   // 启用颜色
+            true                    // 启用分离控制台！！！
+        );
+        
+        // 初始化分离控制台输出
+        if (!separateConsoleOutput->Initialize()) {
+            std::wcout << L"ERROR: Failed to initialize separate console output!" << std::endl;
+        } else {
+            std::wcout << L"[DEBUG] Separate console output initialized successfully!" << std::endl;
+        }
+        
+        // 创建普通文件输出
+        auto fileOutput = std::make_shared<FileLogOutput>(L"TestFile");
+        
+        // 初始化文件输出
+        if (!fileOutput->Initialize(L"logs/separate_console_test.log")) {
+            std::wcout << L"ERROR: Failed to initialize file output!" << std::endl;
+        } else {
+            std::wcout << L"[DEBUG] File output initialized successfully!" << std::endl;
+        }
+        
+        // 创建基础格式化器
+        auto formatter = std::make_shared<BasicLogFormatter>();
+        
+        // 启用多输出系统
+        logger->SetMultiOutputEnabled(true);
+        
+        // 添加输出到日志系统
+        logger->AddLogOutput(separateConsoleOutput);
+        logger->AddLogOutput(fileOutput);
+        
+        std::wcout << L"Separate console created! Log output will now be displayed in the new console window." << std::endl;
+        std::wcout << L"Writing test log messages..." << std::endl;
+        
+        // 写入各种级别的日志到分离控制台
+        logger->WriteLogInfo(L"Welcome to the separate console logging system!");
+        logger->WriteLogDebug(L"This is debug information displayed in the separate console window");
+        logger->WriteLogWarning(L"This is warning information, check the new console window");
+        logger->WriteLogError(L"This is error information highlighted in the independent console");
+        logger->WriteLogCritical(L"This is critical error displayed in the separate console");
+        
+        // 演示颜色功能
+        for (int i = 0; i < 10; ++i) {
+            LogLevel levels[] = {LogLevel::Trace, LogLevel::Debug, LogLevel::Info, LogLevel::Notice, LogLevel::Warning, 
+                               LogLevel::Error, LogLevel::Critical, LogLevel::Alert, LogLevel::Emergency, LogLevel::Fatal};
+            
+            LogLevel level = levels[i];
+            std::wstring levelName;
+            switch (level) {
+                case LogLevel::Trace: levelName = L"TRACE"; break;
+                case LogLevel::Debug: levelName = L"DEBUG"; break;
+                case LogLevel::Info: levelName = L"INFO"; break;
+                case LogLevel::Notice: levelName = L"NOTICE"; break;
+                case LogLevel::Warning: levelName = L"WARNING"; break;
+                case LogLevel::Error: levelName = L"ERROR"; break;
+                case LogLevel::Critical: levelName = L"CRITICAL"; break;
+                case LogLevel::Alert: levelName = L"ALERT"; break;
+                case LogLevel::Emergency: levelName = L"EMERGENCY"; break;
+                case LogLevel::Fatal: levelName = L"FATAL"; break;
+            }
+            
+            // 根据级别调用相应的日志方法
+            switch (level) {
+                case LogLevel::Trace:
+                    logger->WriteLogTrace(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Debug:
+                    logger->WriteLogDebug(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Info:
+                    logger->WriteLogInfo(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Notice:
+                    logger->WriteLogNotice(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Warning:
+                    logger->WriteLogWarning(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Error:
+                    logger->WriteLogError(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Critical:
+                    logger->WriteLogCritical(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Alert:
+                    logger->WriteLogAlert(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Emergency:
+                    logger->WriteLogEmergency(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+                case LogLevel::Fatal:
+                    logger->WriteLogFatal(levelName + L" level message - Index: " + std::to_wstring(i + 1));
+                    break;
+            }
+            
+            // 每条消息之间稍微暂停以便观察
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+        
+        std::wcout << L"Separate console test completed! Please check the newly opened console window." << std::endl;
+        std::wcout << L"Press any key to continue with other tests..." << std::endl;
+        system("pause");
+        
+        // 重置为标准配置继续其他测试
+        auto standardConsoleOutput = std::make_shared<ConsoleLogOutput>(L"Console", true, true, false);  // 不使用分离控制台
+        auto standardFileOutput = std::make_shared<FileLogOutput>(L"MainFile");
+        
+        // 初始化标准输出
+        if (!standardConsoleOutput->Initialize()) {
+            std::wcout << L"ERROR: Failed to initialize standard console output!" << std::endl;
+        } else {
+            std::wcout << L"[DEBUG] Standard console output initialized successfully!" << std::endl;
+        }
+        
+        if (!standardFileOutput->Initialize(L"logs/app_log.log")) {
+            std::wcout << L"ERROR: Failed to initialize standard file output!" << std::endl;
+        } else {
+            std::wcout << L"[DEBUG] Standard file output initialized successfully!" << std::endl;
+        }
+        
+        // 清除之前的输出并添加标准输出
+        logger->RemoveLogOutput(L"SeparateConsole");
+        logger->RemoveLogOutput(L"TestFile");
+        logger->AddLogOutput(standardConsoleOutput);
+        logger->AddLogOutput(standardFileOutput);
+        
         // 创建测试框架实例
         LogTestFramework framework(logger, compressor);
         
