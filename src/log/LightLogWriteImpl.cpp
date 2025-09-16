@@ -1011,7 +1011,7 @@ std::wstring LightLogWrite_Impl::GenerateArchiveFileName(const std::wstring& bas
 		enableCompression = config.enableCompression;
 	}
 
-	// 构建归档文件�?
+	// 构建归档文件名
 	std::filesystem::path archivePath(archiveDir);
 	std::wstring archiveFileName = baseName + L"_" + oss.str() + extension;
 
@@ -1056,7 +1056,7 @@ void LightLogWrite_Impl::CleanupOldArchives()
 	// Fallback: basic cleanup logic for backward compatibility
 	auto config = GetLogRotationConfig();
 	if (config.maxArchiveFiles == 0) {
-		return;  // 无限�?
+		return;  // 无限
 	}
 
 	try {
@@ -1065,7 +1065,7 @@ void LightLogWrite_Impl::CleanupOldArchives()
 			return;
 		}
 
-		// 收集所有归档文�?
+		// 收集所有归档
 		std::vector<std::filesystem::directory_entry> archiveFiles;
 		std::wstring pattern = sLogsBasedName + L"_";
 
@@ -1078,13 +1078,13 @@ void LightLogWrite_Impl::CleanupOldArchives()
 			}
 		}
 
-		// 按修改时间排序（最新的在前�?
+		// 按修改时间排序（最新的在前
 		std::sort(archiveFiles.begin(), archiveFiles.end(),
 			[](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
 				return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
 			});
 
-		// 删除超出限制的文�?
+		// 删除超出限制的文
 		if (archiveFiles.size() > config.maxArchiveFiles) {
 			for (size_t i = config.maxArchiveFiles; i < archiveFiles.size(); ++i) {
 				std::filesystem::remove(archiveFiles[i].path());

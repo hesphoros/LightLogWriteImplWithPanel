@@ -1,0 +1,73 @@
+{
+    "configVersion": "2.0",
+    "enabled": true,
+    "globalMinLevel": "Info",
+    "managerConfig": {
+        "writeMode": "Parallel",
+        "asyncQueueSize": 2000,
+        "workerThreadCount": 4,
+        "failFastOnError": false,
+        "writeTimeout": 10.0
+    },
+    "outputs": [
+        {
+            "name": "ConsoleOutput",
+            "type": "Console",
+            "enabled": true,
+            "minLevel": "Debug",
+            "config": "useStderr=false;enableColors=true;separateConsole=false",
+            "useFormatter": true,
+            "formatterConfig": {
+                "pattern": "[{timestamp}] [{level}] {message}",
+                "timestampFormat": "%Y-%m-%d %H:%M:%S",
+                "enableColors": true,
+                "enableThreadId": false,
+                "enableProcessId": false,
+                "enableSourceInfo": false,
+                "levelColors": {
+                    "Info": 2,
+                    "Warning": 3,
+                    "Error": 1,
+                    "Critical": 10
+                }
+            },
+            "useFilter": false
+        },
+        {
+            "name": "FileOutput",
+            "type": "File",
+            "enabled": true,
+            "minLevel": "Trace",
+            "config": "filePath=logs/application.log;maxSize=100MB;rotation=daily;compression=true",
+            "useFormatter": true,
+            "formatterConfig": {
+                "pattern": "[{timestamp}] [{level}] [PID:{processId}] [TID:{threadId}] {message}",
+                "timestampFormat": "%Y-%m-%d %H:%M:%S.%f",
+                "enableColors": false,
+                "enableThreadId": true,
+                "enableProcessId": true,
+                "enableSourceInfo": true,
+                "levelColors": {}
+            },
+            "useFilter": false
+        },
+        {
+            "name": "ErrorFileOutput",
+            "type": "File", 
+            "enabled": true,
+            "minLevel": "Error",
+            "config": "filePath=logs/errors.log;maxSize=50MB;rotation=weekly;compression=true",
+            "useFormatter": true,
+            "formatterConfig": {
+                "pattern": "[{timestamp}] [{level}] [CRITICAL] {message}",
+                "timestampFormat": "%Y-%m-%d %H:%M:%S",
+                "enableColors": false,
+                "enableThreadId": true,
+                "enableProcessId": true,
+                "enableSourceInfo": true,
+                "levelColors": {}
+            },
+            "useFilter": false
+        }
+    ]
+}
