@@ -27,6 +27,7 @@
 #endif
 
 #include "../../include/log/LogCompressor.h"
+#include "../../include/log/DebugUtils.h"
 
 // Include BS thread pool after macro cleanup
 #ifdef _WIN32
@@ -409,10 +410,12 @@ bool LogCompressor::CompressWithZip(const std::wstring& sourceFile, const std::w
 		sourceFileUtf8.assign(sourceFile.begin(), sourceFile.end());
 		targetFileUtf8.assign(targetFile.begin(), targetFile.end());
 
-		// DEBUG: 添加调试输出
-		std::cout << "[LogCompressor] Starting ZIP compression...\n";
-		std::cout << "[LogCompressor] Source: " << sourceFileUtf8 << "\n";
-		std::cout << "[LogCompressor] Target: " << targetFileUtf8 << "\n";
+		// 调试信息：开始ZIP压缩
+		LIGHTLOG_DEBUG_COMPRESSION_INFO(L"Starting ZIP compression...");
+		std::wstring sourceFileW(sourceFile.begin(), sourceFile.end());
+		std::wstring targetFileW(targetFile.begin(), targetFile.end());
+		LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_INFO, Compression) << L"Source: " << sourceFileW LIGHTLOG_DEBUG_STREAM_END(INFO, Compression);
+		LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_INFO, Compression) << L"Target: " << targetFileW LIGHTLOG_DEBUG_STREAM_END(INFO, Compression);
 
 		// 添加文件访问重试机制，防止文件被锁定
 		std::ifstream source;

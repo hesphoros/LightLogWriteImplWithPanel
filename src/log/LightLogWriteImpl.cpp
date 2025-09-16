@@ -13,6 +13,7 @@
 #include "../../include/log/ConsoleLogOutput.h"
 #include "../../include/log/BasicLogFormatter.h"
 #include "../../include/log/RotationManagerFactory.h"
+#include "../../include/log/DebugUtils.h"
 
 const wchar_t* LightLogWrite_Impl::LOG_LEVEL_STRINGS_W[] = {
 	L"[TRACE     ]",   // Trace
@@ -425,7 +426,7 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 
 	// Write to multi-output system if enabled
 	if (multiOutputEnabled.load() && multiOutputManager) {
-		std::wcout << L"[DEBUG] Multi-output enabled - routing to output manager" << std::endl;
+		LIGHTLOG_DEBUG_MULTIOUTPUT_INFO(L"Multi-output enabled - routing to output manager");
 		LogCallbackInfo logInfo;
 		logInfo.level = level;
 		logInfo.levelString = levelStr;
@@ -435,16 +436,18 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 
 		try {
 			multiOutputManager->WriteLog(logInfo);
-			std::wcout << L"[DEBUG] Multi-output WriteLog completed" << std::endl;
+			LIGHTLOG_DEBUG_MULTIOUTPUT_VERBOSE(L"Multi-output WriteLog completed");
 		}
 		catch (...) {
-			std::wcout << L"[DEBUG] Multi-output WriteLog failed with exception" << std::endl;
+			LIGHTLOG_DEBUG_MULTIOUTPUT_ERROR(L"Multi-output WriteLog failed with exception");
 			// Continue with normal logging even if multi-output fails
 		}
 	} else {
-		std::wcout << L"[DEBUG] Multi-output not enabled or manager is null - multiOutputEnabled=" 
+		LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_VERBOSE, MultiOutput) 
+			<< L"Multi-output not enabled or manager is null - multiOutputEnabled=" 
 			<< (multiOutputEnabled.load() ? L"true" : L"false") 
-			<< L", multiOutputManager=" << (multiOutputManager ? L"valid" : L"null") << std::endl;
+			<< L", multiOutputManager=" << (multiOutputManager ? L"valid" : L"null") 
+			LIGHTLOG_DEBUG_STREAM_END(VERBOSE, MultiOutput);
 	}
 
 	bool bNeedReport = false;

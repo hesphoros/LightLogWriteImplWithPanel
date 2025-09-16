@@ -1,5 +1,6 @@
 #include "../../include/log/ConsoleLogOutput.h"
 #include "../../include/log/UniConv.h"
+#include "../../include/log/DebugUtils.h"
 #include <iostream>
 #include <map>
 #include <thread>
@@ -43,11 +44,11 @@ ConsoleLogOutput::~ConsoleLogOutput() {
 LogOutputResult ConsoleLogOutput::WriteLogInternal(const std::wstring& formattedLog, const LogCallbackInfo& originalInfo) {
     try {
         // 调试信息：检查分离控制台状态
-        std::wcout << L"[DEBUG] WriteLogInternal called, m_useSeparateConsole = " << (m_useSeparateConsole ? L"true" : L"false") << std::endl;
+        LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_VERBOSE, Console) << L"WriteLogInternal called, m_useSeparateConsole = " << (m_useSeparateConsole ? L"true" : L"false") LIGHTLOG_DEBUG_STREAM_END(VERBOSE, Console);
         
         if (m_useSeparateConsole) {
             // Use separate console with thread-safe queue
-            std::wcout << L"[DEBUG] Using separate console, creating log item..." << std::endl;
+            LIGHTLOG_DEBUG_CONSOLE_VERBOSE(L"Using separate console, creating log item...");
             ConsoleLogItem item(formattedLog, originalInfo.level);
             
             EnqueueLogItem(item);
@@ -222,7 +223,7 @@ void ConsoleLogOutput::SetUseSeparateConsole(bool useSeparateConsole) {
 
 void ConsoleLogOutput::InitializeSeparateConsole() {
 #ifdef _WIN32
-    std::wcout << L"[DEBUG] Initializing separate console process..." << std::endl;
+    LIGHTLOG_DEBUG_CONSOLE_INFO(L"Initializing separate console process...");
     
     // 创建匿名管道用于与独立控制台进程通信
     SECURITY_ATTRIBUTES saAttr;
@@ -271,8 +272,8 @@ void ConsoleLogOutput::InitializeSeparateConsole() {
                       &si,                   // 启动信息
                       &pi))             // 进程信息
     {
-        std::wcout << L"[DEBUG] Separate console process created successfully!" << std::endl;
-        std::wcout << L"[DEBUG] Process ID: " << pi.dwProcessId << std::endl;
+        LIGHTLOG_DEBUG_CONSOLE_INFO(L"Separate console process created successfully!");
+        LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_INFO, Console) << L"Process ID: " << pi.dwProcessId LIGHTLOG_DEBUG_STREAM_END(INFO, Console);
         
         // 保存进程句柄
         m_consoleProcess = pi.hProcess;
@@ -287,7 +288,7 @@ void ConsoleLogOutput::InitializeSeparateConsole() {
         m_shutdownRequested = false;
         m_consoleThread = std::thread(&ConsoleLogOutput::ConsoleThreadProc, this);
         
-        std::wcout << L"[DEBUG] Console thread started successfully!\n" ;
+        LIGHTLOG_DEBUG_CONSOLE_INFO(L"Console thread started successfully!");
     }
     else {
         DWORD error = GetLastError();
@@ -329,7 +330,7 @@ void ConsoleLogOutput::ShutdownSeparateConsole() {
         
         // Terminate the console process
         if (m_consoleProcess != INVALID_HANDLE_VALUE) {
-            std::wcout << L"[DEBUG] Terminating separate console process..." << std::endl;
+            LIGHTLOG_DEBUG_CONSOLE_INFO(L"Terminating separate console process...");
             TerminateProcess(m_consoleProcess, 0);
             CloseHandle(m_consoleProcess);
             m_consoleProcess = INVALID_HANDLE_VALUE;
@@ -339,13 +340,13 @@ void ConsoleLogOutput::ShutdownSeparateConsole() {
 }
 
 void ConsoleLogOutput::ConsoleThreadProc() {
-    std::wcout << L"[DEBUG] Console thread started running!" << std::endl;
+    LIGHTLOG_DEBUG_CONSOLE_INFO(L"Console thread started running!");
     
     while (!m_shutdownRequested.load()) {
         ConsoleLogItem item;
         
         if (DequeueLogItem(item)) {
-            std::wcout << L"[DEBUG] Processing log item..." << std::endl;
+            LIGHTLOG_DEBUG_CONSOLE_VERBOSE(L"Processing log item...");
             
             // Process the log item and send to separate console via pipe
             try {
@@ -373,7 +374,7 @@ void ConsoleLogOutput::ConsoleThreadProc() {
                     if (WriteFile(m_consolePipeWrite, fullMessage.c_str(), fullMessage.length(), &bytesWritten, NULL)) {
                         // 刷新管道确保立即显示
                         FlushFileBuffers(m_consolePipeWrite);
-                        std::wcout << L"[DEBUG] Sent log message to separate console: " << bytesWritten << L" bytes" << std::endl;
+                        LIGHTLOG_DEBUG_STREAM(DEBUG_LEVEL_VERBOSE, Console) << L"Sent log message to separate console: " << bytesWritten << L" bytes" LIGHTLOG_DEBUG_STREAM_END(VERBOSE, Console);
                     } else {
                         std::wcout << L"[ERROR] Failed to write to pipe. Error: " << GetLastError() << std::endl;
                     }
@@ -409,7 +410,7 @@ void ConsoleLogOutput::ConsoleThreadProc() {
 
 void ConsoleLogOutput::EnqueueLogItem(const ConsoleLogItem& item) {
     // 调试信息：日志项入队
-    std::wcout << L"[DEBUG] Enqueuing log item to separate console..." << std::endl;
+    LIGHTLOG_DEBUG_CONSOLE_VERBOSE(L"Enqueuing log item to separate console...");
     
     {
         std::lock_guard<std::mutex> lock(m_queueMutex);
