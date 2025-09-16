@@ -211,6 +211,12 @@ public:
      */
     void SetTimeout(std::chrono::milliseconds timeout);
 
+    /**
+     * @brief 生成唯一的事务ID
+     * @return 事务ID
+     */
+    static std::wstring GenerateTransactionId();
+
 private:
     std::wstring transactionId_;                        /*!< 事务ID */
     std::vector<RotationOperation> operations_;         /*!< 操作列表 */
@@ -223,12 +229,6 @@ private:
     
     std::chrono::system_clock::time_point startTime_;  /*!< 开始时间 */
     std::chrono::system_clock::time_point endTime_;    /*!< 结束时间 */
-    
-    /**
-     * @brief 生成唯一的事务ID
-     * @return 事务ID
-     */
-    static std::wstring GenerateTransactionId();
     
     /**
      * @brief 创建备份目录

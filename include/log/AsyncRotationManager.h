@@ -163,16 +163,15 @@ public:
     void Stop() override;
     bool IsRunning() const override;
     
-    // 异步扩展功能
-    
-    /**
-     * @brief 异步执行轮转
-     * @param currentFileName 当前文件名
-     * @param trigger 轮转触发条件
-     * @return 异步结果
-     */
+    // ILogRotationManager 接口中的其他方法
     std::future<RotationResult> PerformRotationAsync(const std::wstring& currentFileName,
-                                                     const RotationTrigger& trigger);
+                                                     const RotationTrigger& trigger) override;
+    size_t GetPendingTaskCount() const override;
+    size_t GetActiveTaskCount() const override;
+    size_t CancelPendingTasks() override;
+    bool WaitForAllTasks(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) override;
+    
+    // 异步扩展功能
     
     /**
      * @brief 异步强制轮转
@@ -397,6 +396,13 @@ private:
      * @return 验证是否通过
      */
     bool ValidateRotationRequest(const AsyncRotationRequest& request) const;
+    
+    /**
+     * @brief 生成归档文件名
+     * @param originalFileName 原始文件名
+     * @return 归档文件名
+     */
+    std::wstring GenerateArchiveFileName(const std::wstring& originalFileName) const;
 };
 
 /**

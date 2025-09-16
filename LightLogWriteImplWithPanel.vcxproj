@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\log\AsyncRotationManager.cpp" />
     <ClCompile Include="src\log\BaseLogOutput.cpp" />
     <ClCompile Include="src\log\BasicLogFormatter.cpp" />
     <ClCompile Include="src\log\ConsoleLogOutput.cpp" />
@@ -150,7 +151,13 @@
     <ClCompile Include="src\log\LogCompressor.cpp" />
     <ClCompile Include="src\log\LogOutputManager.cpp" />
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp" />
+    <ClCompile Include="src\log\RotationErrorHandler.cpp" />
     <ClCompile Include="src\log\RotationManagerFactory.cpp" />
+    <ClCompile Include="src\log\RotationPreChecker.cpp" />
+    <ClCompile Include="src\log\RotationStateMachine.cpp" />
+    <ClCompile Include="src\log\RotationStrategies.cpp" />
+    <ClCompile Include="src\log\TimeCalculator.cpp" />
+    <ClCompile Include="src\log\TransactionalRotation.cpp" />
     <ClCompile Include="src\log\UniConv.cpp" />
   </ItemGroup>
   <ItemGroup>

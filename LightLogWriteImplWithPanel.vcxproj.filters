@@ -51,6 +51,27 @@
     <ClCompile Include="src\log\LogCompressor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\log\AsyncRotationManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationErrorHandler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationPreChecker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationStateMachine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationStrategies.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\TimeCalculator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\TransactionalRotation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\log\BaseLogOutput.h">
