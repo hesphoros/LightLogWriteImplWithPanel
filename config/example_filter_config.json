@@ -1,0 +1,90 @@
+{
+  "configVersion": "1.0",
+  "enabled": true,
+  "globalMinLevel": "Info",
+  "managerConfig": {
+    "writeMode": "Parallel",
+    "flushFrequency": 1000,
+    "bufferSize": 8192,
+    "enableMetrics": true,
+    "timeout": 5000
+  },
+  "outputs": [
+    {
+      "name": "FileOutput",
+      "type": "File",
+      "enabled": true,
+      "minLevel": "Debug",
+      "config": "{\"filePath\":\"logs/app.log\",\"maxFileSize\":10485760,\"encoding\":\"utf-8\"}",
+      "useFormatter": true,
+      "formatterConfig": {
+        "pattern": "[{timestamp}] [{level}] [{thread}] {message}",
+        "timestampFormat": "%Y-%m-%d %H:%M:%S.%f",
+        "enableColors": false,
+        "fieldSeparator": " ",
+        "levelPadding": 8,
+        "enableMetadata": true
+      },
+      "useFilter": true,
+      "filterType": "Level",
+      "filterConfig": "{\"type\":\"Level\",\"enabled\":true,\"priority\":0,\"config\":{\"minLevel\":\"Debug\",\"maxLevel\":\"Fatal\",\"hasMaxLevel\":true}}"
+    },
+    {
+      "name": "ConsoleOutput", 
+      "type": "Console",
+      "enabled": true,
+      "minLevel": "Info",
+      "config": "{\"useColors\":true,\"useSeparateConsole\":false}",
+      "useFormatter": true,
+      "formatterConfig": {
+        "pattern": "{timestamp} [{level}] {message}",
+        "timestampFormat": "%H:%M:%S",
+        "enableColors": true,
+        "fieldSeparator": " ",
+        "levelPadding": 5,
+        "enableMetadata": false
+      },
+      "useFilter": true,
+      "filterType": "Keyword",
+      "filterConfig": "{\"type\":\"Keyword\",\"enabled\":true,\"priority\":10,\"config\":{\"caseSensitive\":false,\"includeKeywords\":[\"error\",\"warning\",\"exception\"],\"excludeKeywords\":[\"debug\",\"verbose\"]}}"
+    },
+    {
+      "name": "ErrorFileOutput",
+      "type": "File", 
+      "enabled": true,
+      "minLevel": "Error",
+      "config": "{\"filePath\":\"logs/error.log\",\"maxFileSize\":5242880,\"encoding\":\"utf-8\"}",
+      "useFormatter": true,
+      "formatterConfig": {
+        "pattern": "[{timestamp}] [{level}] [{thread}] [{file}:{line}] {message}",
+        "timestampFormat": "%Y-%m-%d %H:%M:%S.%f",
+        "enableColors": false,
+        "fieldSeparator": " ",
+        "levelPadding": 10,
+        "enableMetadata": true
+      },
+      "useFilter": true,
+      "filterType": "Level",
+      "filterConfig": "{\"type\":\"Level\",\"enabled\":true,\"priority\":0,\"config\":{\"minLevel\":\"Error\",\"maxLevel\":\"Fatal\",\"hasMaxLevel\":true}}"
+    },
+    {
+      "name": "DebugConsoleOutput",
+      "type": "Console",
+      "enabled": false,
+      "minLevel": "Trace", 
+      "config": "{\"useColors\":true,\"useSeparateConsole\":true}",
+      "useFormatter": true,
+      "formatterConfig": {
+        "pattern": "[{timestamp}] [{level}] [{thread}] [{function}] {message}",
+        "timestampFormat": "%H:%M:%S.%f",
+        "enableColors": true,
+        "fieldSeparator": " ",
+        "levelPadding": 8,
+        "enableMetadata": true
+      },
+      "useFilter": true,
+      "filterType": "RateLimit",
+      "filterConfig": "{\"type\":\"RateLimit\",\"enabled\":true,\"priority\":5,\"config\":{\"maxPerSecond\":50,\"maxBurst\":10}}"
+    }
+  ]
+}

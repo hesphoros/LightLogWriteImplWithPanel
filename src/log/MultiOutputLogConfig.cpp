@@ -1,4 +1,5 @@
 #include "../../include/log/MultiOutputLogConfig.h"
+#include "../../include/log/LogFilterFactory.h"
 #include <fstream>
 #include <codecvt>
 #include <locale>
@@ -118,7 +119,9 @@ nlohmann::json MultiOutputConfigSerializer::SerializeOutputConfig(const OutputCo
     
     // Filter configuration
     j["useFilter"] = output.useFilter;
-    // TODO: Add filter serialization when filter system is complete
+    if (output.useFilter) {
+        j["filterConfig"] = SerializeFilterConfig(output);
+    }
     
     return j;
 }
@@ -160,7 +163,9 @@ OutputConfig MultiOutputConfigSerializer::DeserializeOutputConfig(const nlohmann
         if (json.contains("useFilter")) {
             output.useFilter = json["useFilter"].get<bool>();
         }
-        // TODO: Add filter deserialization when filter system is complete
+        if (output.useFilter && json.contains("filterConfig")) {
+            DeserializeFilterConfig(json["filterConfig"], output);
+        }
     }
     catch (const std::exception&) {
         // Return default on error
@@ -352,4 +357,47 @@ OutputWriteMode MultiOutputConfigSerializer::StringToOutputWriteMode(const std::
     if (str == "Parallel") return OutputWriteMode::Parallel;
     if (str == "Async") return OutputWriteMode::Async;
     return OutputWriteMode::Sequential; // Default
+}
+
+nlohmann::json MultiOutputConfigSerializer::SerializeFilterConfig(const OutputConfig& output) {
+    nlohmann::json filterConfig;
+    
+    if (!output.filterType.empty()) {
+        filterConfig["type"] = WStringToString(output.filterType);
+    }
+    
+    if (!output.filterConfig.empty()) {
+        try {
+            // Try to parse filterConfig as JSON, if it fails, store as string
+            filterConfig["config"] = nlohmann::json::parse(WStringToString(output.filterConfig));
+        }
+        catch (...) {
+            // If not valid JSON, store as string
+            filterConfig["config"] = WStringToString(output.filterConfig);
+        }
+    }
+    
+    return filterConfig;
+}
+
+void MultiOutputConfigSerializer::DeserializeFilterConfig(const nlohmann::json& json, OutputConfig& output) {
+    try {
+        if (json.contains("type")) {
+            output.filterType = StringToWString(json["type"].get<std::string>());
+        }
+        
+        if (json.contains("config")) {
+            if (json["config"].is_string()) {
+                output.filterConfig = StringToWString(json["config"].get<std::string>());
+            } else {
+                // If it's a JSON object, serialize it back to string
+                output.filterConfig = StringToWString(json["config"].dump());
+            }
+        }
+    }
+    catch (const std::exception&) {
+        // Clear filter config on error
+        output.filterType.clear();
+        output.filterConfig.clear();
+    }
 }

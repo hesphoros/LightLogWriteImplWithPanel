@@ -25,7 +25,8 @@ struct OutputConfig {
 
     // Filter configuration
     bool useFilter = false;
-    // Note: Filter configuration would go here when BasicLogFilter is implemented
+    std::wstring filterType;            // Filter type (Level, Keyword, Regex, etc.)
+    std::wstring filterConfig;          // Filter-specific configuration (JSON string)
 
     OutputConfig() = default;
     OutputConfig(const std::wstring& n, const std::wstring& t) : name(n), type(t) {}
@@ -92,6 +93,8 @@ private:
     static LogOutputManagerConfig DeserializeManagerConfig(const nlohmann::json& json);
     static nlohmann::json SerializeFormatterConfig(const LogFormatConfig& config);
     static LogFormatConfig DeserializeFormatterConfig(const nlohmann::json& json);
+    static nlohmann::json SerializeFilterConfig(const OutputConfig& output);
+    static void DeserializeFilterConfig(const nlohmann::json& json, OutputConfig& output);
     
     // Utility methods
     static std::string WStringToString(const std::wstring& wstr);
