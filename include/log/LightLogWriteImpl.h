@@ -315,11 +315,7 @@ public:
 	 */
 	size_t GetCurrentLogFileSize() const;
 
-	/**
-	 * @brief Clean up old archive files based on retention policy
-	 * @details This function removes old archived log files according to the maxArchiveFiles setting
-	 */
-	void CleanupOldArchives();
+
 
 	/**
 	 * @brief Get number of pending rotation tasks
@@ -464,12 +460,7 @@ private:
 	 */
 	void CheckAndPerformRotation();
 
-	/**
-	 * @brief Perform actual log file rotation
-	 * @param reason The reason for rotation (for logging purposes)
-	 * @details This function performs the actual rotation process including archiving and compression
-	 */
-	void PerformLogRotation(const std::wstring& reason);
+
 
 	/**
 	 * @brief Generate archive file name with timestamp
@@ -479,11 +470,7 @@ private:
 	 */
 	std::wstring GenerateArchiveFileName(const std::wstring& baseFileName, const std::chrono::system_clock::time_point& timestamp);
 
-	/**
-	 * @brief Check if time-based rotation is needed
-	 * @return true if time rotation is needed, false otherwise
-	 */
-	bool IsTimeRotationNeeded() const;
+
 
 	/**
 	 * @brief Get current log file size without locking (for internal use)

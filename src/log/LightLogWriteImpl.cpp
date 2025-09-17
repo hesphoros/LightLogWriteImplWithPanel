@@ -953,37 +953,7 @@ void LightLogWrite_Impl::CheckAndPerformRotation()
 	}
 }
 
-void LightLogWrite_Impl::PerformLogRotation(const std::wstring& reason)
-{
-	// This method is now deprecated - rotation is handled by the rotation manager
-	// Keep for backward compatibility or legacy calls
 
-	if (!rotationManager_) {
-		return;
-	}
-
-	try {
-		// Use the new rotation manager for manual rotation
-		auto result = rotationManager_->ForceRotation(currentLogFileName, reason);
-
-		if (result.success) {
-			// Update current file name if rotation created a new file
-			if (!result.newFileName.empty()) {
-				currentLogFileName = result.newFileName;
-			}
-			std::cout << "[LogRotation] Manual rotation completed: " << result.errorMessage << "\n";
-		}
-		else {
-			std::cerr << "[LogRotation] Manual rotation failed: " << result.errorMessage << "\n";
-		}
-	}
-	catch (const std::exception& e) {
-		std::cerr << "[LogRotation] Exception in PerformLogRotation: " << e.what() << "\n";
-	}
-	catch (...) {
-		std::cerr << "[LogRotation] Unknown exception in PerformLogRotation\n";
-	}
-}
 
 std::wstring LightLogWrite_Impl::GenerateArchiveFileName(const std::wstring& baseFileName, const std::chrono::system_clock::time_point& timestamp)
 {
@@ -1021,86 +991,9 @@ std::wstring LightLogWrite_Impl::GenerateArchiveFileName(const std::wstring& bas
 	return (archivePath / archiveFileName).wstring();
 }
 
-bool LightLogWrite_Impl::IsTimeRotationNeeded() const
-{
-	// This method is now deprecated - time rotation checking is handled by the rotation manager
-	// Keep for backward compatibility but delegate to rotation manager if available
 
-	if (rotationManager_) {
-		// Use rotation manager to check rotation needs
-		size_t currentSize = GetCurrentLogFileSizeUnlocked();
-		auto trigger = rotationManager_->CheckRotationNeeded(currentLogFileName, currentSize);
-		return trigger.timeReached;
-	}
 
-	// Fallback: always return false if no rotation manager
-	return false;
-}
 
-void LightLogWrite_Impl::CleanupOldArchives()
-{
-	// This method is now deprecated - archive cleanup is handled by the rotation manager
-	// Keep for backward compatibility but delegate to rotation manager if available
-
-	if (rotationManager_) {
-		try {
-			// Use rotation manager to cleanup old archives
-			size_t cleanedCount = rotationManager_->CleanupOldArchives();
-			if (cleanedCount > 0) {
-				std::wcout << L"Cleaned up " << cleanedCount << L" old archive files" << std::endl;
-			}
-		}
-		catch (const std::exception& e) {
-			std::cerr << "Error during archive cleanup: " << e.what() << std::endl;
-		}
-		return;
-	}
-
-	// Fallback: basic cleanup logic for backward compatibility
-	auto config = GetLogRotationConfig();
-	if (config.maxArchiveFiles == 0) {
-		return;  // 无限
-	}
-
-	try {
-		std::filesystem::path archiveDir(config.archiveDirectory);
-		if (!std::filesystem::exists(archiveDir)) {
-			return;
-		}
-
-		// 收集所有归档
-		std::vector<std::filesystem::directory_entry> archiveFiles;
-		std::wstring pattern = sLogsBasedName + L"_";
-
-		for (const auto& entry : std::filesystem::directory_iterator(archiveDir)) {
-			if (entry.is_regular_file()) {
-				std::wstring fileName = entry.path().filename().wstring();
-				if (fileName.find(pattern) == 0) {
-					archiveFiles.push_back(entry);
-				}
-			}
-		}
-
-		// 按修改时间排序（最新的在前
-		std::sort(archiveFiles.begin(), archiveFiles.end(),
-			[](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
-				return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
-			});
-
-		// 删除超出限制的文
-		if (archiveFiles.size() > config.maxArchiveFiles) {
-			for (size_t i = config.maxArchiveFiles; i < archiveFiles.size(); ++i) {
-				std::filesystem::remove(archiveFiles[i].path());
-			}
-		}
-	}
-	catch (...) {
-		// 清理失败，记录到当前日志文件（如果可能）
-		if (pLogFileStream.is_open()) {
-			pLogFileStream << L"[CLEANUP_ERROR] Failed to cleanup old archive files" << std::endl;
-		}
-	}
-}
 
 // Multi-output system implementation
 bool LightLogWrite_Impl::SaveMultiOutputConfigToJson(const std::wstring& configFilePath) {
