@@ -21,13 +21,12 @@ class ConsoleLogOutput : public BaseLogOutput {
 public:
     // Thread-safe queue for console output
     struct ConsoleLogItem {
-        std::wstring formattedLog;  // 使用 wstring 保持一致性
+        std::wstring formattedLog;
         LogLevel level;
         std::chrono::system_clock::time_point timestamp;
 
         // 默认构造函数
         ConsoleLogItem() : level(LogLevel::Info), timestamp(std::chrono::system_clock::now()) {}
-        
         // 带参数的构造函数
         ConsoleLogItem(const std::wstring& log, LogLevel lvl)
             : formattedLog(log), level(lvl), timestamp(std::chrono::system_clock::now()) {
@@ -67,8 +66,8 @@ public:
      * @param enableColors Whether to enable color output
      * @param useSeparateConsole Whether to create a separate console window
      */
-    ConsoleLogOutput(const std::wstring& outputName = L"Console", 
-                     bool useStderr = true, 
+    ConsoleLogOutput(const std::wstring& outputName = L"Console",
+                     bool useStderr = true,
                      bool enableColors = true,
                      bool useSeparateConsole = false);
 

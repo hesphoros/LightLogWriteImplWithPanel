@@ -73,8 +73,10 @@ LogOutputResult ConsoleLogOutput::WriteLogInternal(const std::wstring& formatted
             // Choose output stream
             std::ostream& outStream = ShouldUseStderr(originalInfo.level) ? std::cerr : std::cout;
             
-            // Write with level prefix, color codes if enabled
-            outStream << colorCode << levelPrefix << " " << logStr << resetCode << std::endl;
+            // Write with color codes wrapping the entire output
+            outStream << colorCode << levelPrefix << " " << logStr << resetCode;
+            outStream << std::endl;
+            outStream.flush();  // Force immediate output
             
             return LogOutputResult::Success;
         }
@@ -97,6 +99,7 @@ bool ConsoleLogOutput::InitializeInternal(const std::wstring& config) {
 #ifdef _WIN32
     // Enable UTF-8 output on Windows console
     SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
     
     // Enable ANSI color support on Windows 10+
     if (m_enableColors) {
@@ -104,15 +107,21 @@ bool ConsoleLogOutput::InitializeInternal(const std::wstring& config) {
         HANDLE hErr = GetStdHandle(STD_ERROR_HANDLE);
         DWORD dwMode = 0;
         
+        // Configure stdout for ANSI colors
         if (GetConsoleMode(hOut, &dwMode)) {
-            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT;
             SetConsoleMode(hOut, dwMode);
         }
         
+        // Configure stderr for ANSI colors  
         if (GetConsoleMode(hErr, &dwMode)) {
-            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT;
             SetConsoleMode(hErr, dwMode);
         }
+        
+        // Force a test output to ensure colors work
+        std::cout << "\033[0m"; // Reset any existing color state
+        std::cout.flush();
     }
 #endif
     
@@ -138,18 +147,18 @@ std::string ConsoleLogOutput::GetColorCode(LogLevel level) const {
         return "";
     }
     
-    // ANSI color codes
+    // ANSI color codes - optimized for Windows Terminal with high visibility
     static const std::map<LogLevel, std::string> colorMap = {
-        {LogLevel::Trace,     "\033[37m"},      // White
-        {LogLevel::Debug,     "\033[36m"},      // Cyan
-        {LogLevel::Info,      "\033[32m"},      // Green
-        {LogLevel::Notice,    "\033[34m"},      // Blue
-        {LogLevel::Warning,   "\033[33m"},      // Yellow
-        {LogLevel::Error,     "\033[31m"},      // Red
-        {LogLevel::Critical,  "\033[35m"},      // Magenta
-        {LogLevel::Alert,     "\033[1;31m"},    // Bright Red
-        {LogLevel::Emergency, "\033[1;35m"},    // Bright Magenta
-        {LogLevel::Fatal,     "\033[1;41m"}     // Bright Red Background
+        {LogLevel::Trace,     "\033[90m"},      // Dark Gray (subtle)
+        {LogLevel::Debug,     "\033[96m"},      // Bright Cyan (clear visibility)
+        {LogLevel::Info,      "\033[92m"},      // Bright Green
+        {LogLevel::Notice,    "\033[94m"},      // Bright Blue
+        {LogLevel::Warning,   "\033[93m"},      // Bright Yellow (better visibility)
+        {LogLevel::Error,     "\033[91m"},      // Bright Red
+        {LogLevel::Critical,  "\033[95m"},      // Bright Magenta
+        {LogLevel::Alert,     "\033[41m"},      // Red Background
+        {LogLevel::Emergency, "\033[45m"},      // Magenta Background
+        {LogLevel::Fatal,     "\033[41m"}       // Red Background (simplified)
     };
     
     auto it = colorMap.find(level);

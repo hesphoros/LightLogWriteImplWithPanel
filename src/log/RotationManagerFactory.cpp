@@ -86,13 +86,7 @@ public:
 
     RotationResult PerformRotation(const std::wstring& currentFileName,
                                   const RotationTrigger& trigger) override {
-        std::cout << "[RotationManager] PerformRotation started for file: " 
-                  << std::string(currentFileName.begin(), currentFileName.end()) << "\n";
-        
-#ifdef _WIN32
-        std::cout << "[RotationManager] Process ID: " << GetCurrentProcessId() 
-                  << ", Thread ID: " << GetCurrentThreadId() << "\n";
-#endif
+
         
         RotationResult result;
         result.success = false;
@@ -102,7 +96,7 @@ public:
         
         // 预检查阶段
         if (config_.enablePreCheck) {
-            std::cout << "[RotationManager] Pre-check enabled - validating rotation conditions\n";
+
             if (!CheckDiskSpace(currentFileName)) {
                 result.success = false;
                 result.errorMessage = "Pre-check failed: Insufficient disk space for rotation";
@@ -112,12 +106,12 @@ public:
         
         // 状态机初始化
         if (config_.enableStateMachine) {
-            std::cout << "[RotationManager] State machine enabled - initializing rotation state\n";
+
         }
         
         // 事务机制开始
         if (config_.enableTransaction) {
-            std::cout << "[RotationManager] Transaction enabled - starting rotation transaction\n";
+
         }
         
         // 使用重试机制
@@ -193,7 +187,7 @@ public:
                     WideCharToMultiByte(CP_UTF8, 0, currentFileName.c_str(), -1, &currentFileNameStr[0], len, NULL, NULL);
                     currentFileNameStr.resize(len - 1);
                     
-                    std::cout << "[RotationManager] Opening source file for size check: " << currentFileNameStr << "\n";
+
                     
                     std::ifstream source(currentFileNameStr, std::ios::binary | std::ios::ate);
                     if (source.is_open()) {
@@ -203,19 +197,15 @@ public:
                         // Only create archive file if source has content
                         if (fileSize > 0) {
                             if (config_.enableCompression && compressor_) {
-                                std::cout << "[RotationManager] Preparing for compression...\n";
                                 source.close();
                                 
-                                std::cout << "[RotationManager] Calling CompressFile...\n";
                                 if (compressor_->CompressFile(currentFileName, fullArchivePath)) {
-                                    std::cout << "[RotationManager] Compression completed successfully\n";
                                     result.archiveFileName = fullArchivePath;
                                     
                                     if (config_.deleteSourceAfterArchive) {
-                                        std::cout << "[RotationManager] deleteSourceAfterArchive enabled - file archived with compression\n";
+                                        // File archived with compression
                                     }
                                 } else {
-                                    std::cout << "[RotationManager] Compression failed, falling back to copy\n";
                                     std::ifstream fallbackSource(currentFileNameStr, std::ios::binary);
                                     if (fallbackSource.is_open()) {
                                         std::wstring fallbackPath = fullArchivePath;
@@ -284,18 +274,18 @@ public:
                 
                 // 事务提交
                 if (config_.enableTransaction) {
-                    std::cout << "[RotationManager] Transaction commit - rotation operation completed successfully\n";
+
                 }
                 
                 // 状态机状态更新
                 if (config_.enableStateMachine) {
-                    std::cout << "[RotationManager] State machine - updating rotation state to completed\n";
+
                 }
                 
             } catch (const std::exception& e) {
                 if (retryCount < config_.maxRetryCount) {
                     retryCount++;
-                    std::cout << "[RotationManager] Rotation attempt " << retryCount 
+                    std::cout << " " << retryCount 
                               << " failed, retrying in " << config_.retryDelay.count() << "ms...\n";
                     
                     std::this_thread::sleep_for(config_.retryDelay);
@@ -305,11 +295,11 @@ public:
                                         " attempts: " + e.what();
                     
                     if (config_.enableTransaction) {
-                        std::cout << "[RotationManager] Transaction rollback - rotation operation failed\n";
+
                     }
                     
                     if (config_.enableStateMachine) {
-                        std::cout << "[RotationManager] State machine - updating rotation state to failed\n";
+
                     }
                 }
             }

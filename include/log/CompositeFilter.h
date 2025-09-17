@@ -18,7 +18,7 @@ private:
     bool m_shortCircuitEnabled;
     
 public:
-    explicit CompositeFilter(const std::wstring& name = L"CompositeFilter", 
+    explicit CompositeFilter(const std::wstring& name = L"CompositeFilter",
                            CompositionStrategy strategy = CompositionStrategy::AllMustPass);
     
     // ILogFilter implementation

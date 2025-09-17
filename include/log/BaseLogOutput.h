@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ILogOutput.h"
-#include "ILogFormatter.h" 
+#include "ILogFormatter.h"
 #include "ILogFilter.h"
 #include "LightLogWriteImpl.h"
 #include <mutex>

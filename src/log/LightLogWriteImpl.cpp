@@ -149,20 +149,12 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 
 	if (queueFullStrategy == LogQueueOverflowStrategy::Block) {
 		std::unique_lock<std::mutex> sWriteLock(pLogWriteMutex);
-		// std::wcerr << L"[WriteLogContent] Try push (Block), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
 		pLogWriteQueue.emplace(sTypeVal, sMessage);
-		// std::wcerr << L"[WriteLogContent] Pushed (Block), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 	}
 	else if (queueFullStrategy == LogQueueOverflowStrategy::DropOldest) {
 		std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
-		// std::wcerr << L"[WriteLogContent] Try push (DropOldest), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 		if (pLogWriteQueue.size() >= kMaxQueueSize) {
-			// std::wcerr << L"[WriteLogContent] Drop oldest, queue full: " <<
-			// pLogWriteQueue.size() << std::endl;
 			pLogWriteQueue.pop();
 			++discardCount;
 			if (discardCount - lastReportedDiscardCount >= reportInterval) {
@@ -172,8 +164,6 @@ void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std
 			}
 		}
 		pLogWriteQueue.emplace(sTypeVal, sMessage);
-		// std::wcout << L"[WriteLogContent] Pushed (DropOldest), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 	}
 	pWrittenCondVar.notify_one();
 	if (bNeedReport && !inErrorReport.exchange(true)) {
@@ -192,20 +182,12 @@ void LightLogWrite_Impl::WriteLogContent(std::wstring&& sTypeVal, std::wstring&&
 
 	if (queueFullStrategy == LogQueueOverflowStrategy::Block) {
 		std::unique_lock<std::mutex> sWriteLock(pLogWriteMutex);
-		// std::wcerr << L"[WriteLogContent] Try push (Block), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 		pWrittenCondVar.wait(sWriteLock, [this] { return pLogWriteQueue.size() < kMaxQueueSize; });
 		pLogWriteQueue.emplace(std::move(sTypeVal), std::move(sMessage));
-		// std::wcerr << L"[WriteLogContent] Pushed (Block), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 	}
 	else if (queueFullStrategy == LogQueueOverflowStrategy::DropOldest) {
 		std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
-		// std::wcerr << L"[WriteLogContent] Try push (DropOldest), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 		if (pLogWriteQueue.size() >= kMaxQueueSize) {
-			// std::wcerr << L"[WriteLogContent] Drop oldest, queue full: " <<
-			// pLogWriteQueue.size() << std::endl;
 			pLogWriteQueue.pop();
 			++discardCount;
 			if (discardCount - lastReportedDiscardCount >= reportInterval) {
@@ -215,13 +197,10 @@ void LightLogWrite_Impl::WriteLogContent(std::wstring&& sTypeVal, std::wstring&&
 			}
 		}
 		pLogWriteQueue.emplace(std::move(sTypeVal), std::move(sMessage));
-		// std::wcout << L"[WriteLogContent] Pushed (DropOldest), queue size: " <<
-		// pLogWriteQueue.size() << std::endl;
 	}
 	pWrittenCondVar.notify_one();
 	if (bNeedReport && !inErrorReport.exchange(true)) {
 		std::wstring overflowMsg = L"The log queue overflows and has been discarded " + std::to_wstring(currentDiscard) + L" logs";
-		// std::wcerr << L"[WriteLogContent] Report overflow: " << overflowMsg << std::endl;
 		WriteLogContent(L"LOG_OVERFLOW", std::move(overflowMsg));  // Use move for the overflow message too
 		inErrorReport = false;
 	}
@@ -308,7 +287,7 @@ void LightLogWrite_Impl::CreateLogsFileUnlocked()
 	pLogFileStream.open(sOutFileName, std::ios::app);
 	pLogFileStream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 
-	// 更新当前日志文件名以便轮转使�?
+	// 更新当前日志文件名以便轮转器使用
 	currentLogFileName = sOutFileName;
 }
 
@@ -335,14 +314,14 @@ void LightLogWrite_Impl::RunWriteThread()
 			}
 		}
 
-		// 在锁外检查并执行日志轮转，避免死�?
+		// 在锁外检查并执行日志轮转，避免死锁
 		CheckAndPerformRotation();
 		if (!sLogMessageInf.sLogContentVal.empty() && pLogFileStream.is_open()) {
 			pLogFileStream << sLogMessageInf.sLogTagNameVal << L"-//>>>" << GetCurrentTimer() << " : " << sLogMessageInf.sLogContentVal << "\n";
 		}
 	}
 	pLogFileStream.close();
-	std::cerr << "Log write thread Exit\n";
+
 }
 
 void LightLogWrite_Impl::ChecksDirectory(const std::wstring& sFilename)
@@ -416,12 +395,12 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::wstring& sMe
 
 			FilterOperation result = logFilter_->ApplyFilter(filterInfo, nullptr);
 			if (result == FilterOperation::Block) {
-				return; // 消息被过滤器阻止，直接返�?
+				return; // 消息被过滤器阻止，直接返回
 			}
 		}
 	}
 
-	// 触发回调（在写入队列之前�?
+	// 触发回调（在写入队列之前）
 	TriggerLogCallbacks(level, levelStr, sMessage);
 
 	// Write to multi-output system if enabled
@@ -503,12 +482,12 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, std::wstring&& sMessage
 
 			FilterOperation result = logFilter_->ApplyFilter(filterInfo, nullptr);
 			if (result == FilterOperation::Block) {
-				return; // 消息被过滤器阻止，直接返�?
+				return; // 消息被过滤器阻止，直接返回
 			}
 		}
 	}
 
-	// 触发回调（在写入队列之前�?
+	// 触发回调（在写入队列之前）
 	TriggerLogCallbacks(level, levelStr, sMessage);
 
 	// Write to multi-output system if enabled
@@ -649,7 +628,7 @@ void LightLogWrite_Impl::TriggerLogCallbacks(LogLevel level, const std::wstring&
 			}
 			catch (...) {
 				// 忽略回调函数中的异常，避免影响日志系统的正常工作
-				// 在实际应用中，可以考虑记录这些异常到错误日�?
+				// 在实际应用中，可以考虑记录这些异常到错误日志
 			}
 		}
 	}
@@ -691,21 +670,14 @@ LogRotationConfig LightLogWrite_Impl::GetLogRotationConfig() const
 void LightLogWrite_Impl::ForceLogRotation()
 {
 	if (!rotationManager_) {
-		std::cout << "[LogRotation] No rotation manager available\n";
 		return;
-	}
-
-	std::cout << "[LogRotation] Starting force rotation process...\n";
-
-	try {
+	}	try {
 		// CRITICAL: Flush and close the current log file stream before rotation
 		if (pLogFileStream.is_open()) {
-			std::cout << "[LogRotation] Flushing and closing current log file...\n";
 			pLogFileStream.flush();  // Force write all buffered data
 			pLogFileStream.close();  // Close the file handle
 			
 			// Give the OS time to fully release the file handle
-			std::cout << "[LogRotation] Waiting for file handle to be released...\n";
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		}
 		
@@ -714,7 +686,7 @@ void LightLogWrite_Impl::ForceLogRotation()
 		trigger.manualRequested = true;
 		trigger.reason = L"Manual rotation requested";
 		
-		std::cout << "[LogRotation] Performing async rotation with timeout...\n";
+
 		
 		// Use async rotation with timeout to avoid blocking
 		auto rotationFuture = rotationManager_->PerformRotationAsync(currentLogFileName, trigger);
@@ -723,14 +695,12 @@ void LightLogWrite_Impl::ForceLogRotation()
 		RotationResult result;
 		if (rotationFuture.wait_for(std::chrono::seconds(30)) == std::future_status::ready) {
 			result = rotationFuture.get();
-			std::cout << "[LogRotation] Force rotation completed: " 
-			          << (result.success ? "SUCCESS" : "FAILED") << "\n";
 			
 			if (result.success && !result.newFileName.empty()) {
 				currentLogFileName = result.newFileName;
 			}
 		} else {
-			std::cout << "[LogRotation] Force rotation timed out after 30 seconds\n";
+			// Rotation timed out
 		}
 		
 		// CRITICAL: Reopen the log file stream after rotation
