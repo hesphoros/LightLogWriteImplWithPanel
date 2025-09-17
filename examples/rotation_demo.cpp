@@ -7,7 +7,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "../include/log/LightLogWriteImpl.h"
+#include "log/LightLogWriteImpl.h"
 
 void DemonstrateRotationSystem() {
     std::wcout << L"=== 日志轮转系统演示 ===" << std::endl;

@@ -15,24 +15,23 @@
 class BaseLogOutput : public ILogOutput {
 protected:
     // Basic properties
-    std::wstring m_outputName;
-    std::wstring m_outputType;
-    LogLevel m_minLogLevel;
-    std::atomic<bool> m_enabled;
-    std::atomic<bool> m_initialized;
-
+    std::wstring        m_outputName;
+    std::wstring        m_outputType;
+    LogLevel            m_minLogLevel;
+    std::atomic<bool>   m_enabled;
+    std::atomic<bool>   m_initialized;
     // Components
-    LogFormatterPtr m_formatter;
-    LogFilterPtr m_filter;
-
+    LogFormatterPtr     m_formatter;
+    LogFilterPtr        m_filter;
     // Statistics
-    mutable std::mutex m_statsMutex;
-    LogOutputStats m_stats;
-
+    mutable std::mutex  m_statsMutex;
+    LogOutputStats      m_stats;
     // Thread safety
-    mutable std::mutex m_outputMutex;
+    mutable std::mutex  m_outputMutex;
 
 public:
+    using ILogFormatterPtr  = std::shared_ptr<ILogFormatter>;
+    using ILogFilterPtr     = std::shared_ptr<ILogFilter>;
     /**
      * @brief Constructor
      * @param outputName Name of this output
@@ -46,39 +45,39 @@ public:
     virtual ~BaseLogOutput();
 
     // ILogOutput interface implementation
-    LogOutputResult WriteLog(const LogCallbackInfo& logInfo) override;
-    void Flush() override;
-    bool IsAvailable() const override;
-    bool Initialize(const std::wstring& config = L"") override;
-    void Shutdown() override;
-    std::wstring GetConfigString() const override;
+    LogOutputResult  WriteLog(const LogCallbackInfo& logInfo) override;
+    void             Flush() override;
+    bool             IsAvailable() const override;
+    bool             Initialize(const std::wstring& config = L"") override;
+    void             Shutdown() override;
+    std::wstring     GetConfigString() const override;
 
     // ILogOutput interface implementation
-    std::wstring GetOutputName() const override;
-    std::wstring GetOutputType() const override;
-    void SetFormatter(std::shared_ptr<ILogFormatter> formatter) override;
-    std::shared_ptr<ILogFormatter> GetFormatter() const override;
-    void SetFilter(std::shared_ptr<ILogFilter> filter) override;
-    std::shared_ptr<ILogFilter> GetFilter() const override;
-    LogOutputStats GetStatistics() const override;
-    void ResetStatistics() override;
-    void SetMinLogLevel(LogLevel minLevel) override;
-    LogLevel GetMinLogLevel() const override;
-    void SetEnabled(bool enabled) override;
-    bool IsEnabled() const override;
+    std::wstring     GetOutputName() const override;
+    std::wstring     GetOutputType() const override;
+    void             SetFormatter(ILogFormatterPtr formatter) override;
+    ILogFormatterPtr GetFormatter() const override;
+    void             SetFilter(ILogFilterPtr filter) override;
+    ILogFilterPtr    GetFilter() const override;
+    LogOutputStats   GetStatistics() const override;
+    void             ResetStatistics() override;
+    void             SetMinLogLevel(LogLevel minLevel) override;
+    LogLevel         GetMinLogLevel() const override;
+    void             SetEnabled(bool enabled) override;
+    bool             IsEnabled() const override;
 
 protected:
     // Virtual methods that derived classes must implement
-    virtual LogOutputResult WriteLogInternal(const std::wstring& formattedLog, const LogCallbackInfo& originalInfo) = 0;
-    virtual void FlushInternal() = 0;
-    virtual bool IsAvailableInternal() const = 0;
-    virtual bool InitializeInternal(const std::wstring& config) = 0;
-    virtual void ShutdownInternal() = 0;
-    virtual std::wstring GetConfigStringInternal() const = 0;
+    virtual LogOutputResult  WriteLogInternal(const std::wstring& formattedLog, const LogCallbackInfo& originalInfo) = 0;
+    virtual void             FlushInternal() = 0;
+    virtual bool             IsAvailableInternal() const = 0;
+    virtual bool             InitializeInternal(const std::wstring& config) = 0;
+    virtual void             ShutdownInternal() = 0;
+    virtual std::wstring    GetConfigStringInternal() const = 0;
 
     // Helper methods for derived classes
-    void UpdateStats(LogOutputResult result, double writeTime, size_t bytesWritten);
-    bool ShouldLogLevel(LogLevel level) const;
-    std::wstring FormatLogMessage(const LogCallbackInfo& logInfo);
+    void            UpdateStats(LogOutputResult result, double writeTime, size_t bytesWritten);
+    bool            ShouldLogLevel(LogLevel level) const;
+    std::wstring    FormatLogMessage(const LogCallbackInfo& logInfo);
     FilterOperation ApplyFilter(const LogCallbackInfo& logInfo, LogCallbackInfo* transformedInfo = nullptr);
 };

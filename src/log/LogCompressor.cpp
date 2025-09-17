@@ -26,8 +26,8 @@
 #endif
 #endif
 
-#include "../../include/log/LogCompressor.h"
-#include "../../include/log/DebugUtils.h"
+#include "log/LogCompressor.h"
+#include "log/DebugUtils.h"
 
 // Include BS thread pool after macro cleanup
 #ifdef _WIN32
@@ -36,14 +36,14 @@
 #pragma push_macro("max")
 #undef min
 #undef max
-#include "../../include/BS/BS_thread_pool.hpp"
+#include "BS/BS_thread_pool.hpp"
 #pragma pop_macro("max")
 #pragma pop_macro("min")
 #else
-#include "../../include/BS/BS_thread_pool.hpp"
+#include "BS/BS_thread_pool.hpp"
 #endif
 
-#include "../../include/miniz/zip_file.hpp"
+#include "miniz/zip_file.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>

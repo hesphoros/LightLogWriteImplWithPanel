@@ -1,4 +1,4 @@
-#include "../include/log/LightLogWriteImpl.h"
+#include "log/LightLogWriteImpl.h"
 #include <iostream>
 #include <thread>
 #include <chrono>

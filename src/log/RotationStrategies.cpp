@@ -10,7 +10,7 @@
  *  @email    hesphoros@gmail.com
  *****************************************************************************/
 
-#include "../../include/log/RotationStrategies.h"
+#include "log/RotationStrategies.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>

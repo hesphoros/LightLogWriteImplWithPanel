@@ -1,6 +1,6 @@
-#include "../../include/log/ConsoleLogOutput.h"
-#include "../../include/log/UniConv.h"
-#include "../../include/log/DebugUtils.h"
+#include "log/ConsoleLogOutput.h"
+#include "log/UniConv.h"
+#include "log/DebugUtils.h"
 #include <iostream>
 #include <map>
 #include <thread>

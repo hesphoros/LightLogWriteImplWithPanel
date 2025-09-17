@@ -1,4 +1,4 @@
-#include "../../include/log/RotationPreChecker.h"
+#include "log/RotationPreChecker.h"
 #include <filesystem>
 #include <fstream>
 #include <sstream>

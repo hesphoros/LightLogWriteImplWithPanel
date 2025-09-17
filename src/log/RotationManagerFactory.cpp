@@ -1,8 +1,8 @@
-#include "../../include/log/RotationManagerFactory.h"
-#include "../../include/log/ILogRotationManager.h"
-#include "../../include/log/IRotationStrategy.h"
-#include "../../include/log/RotationStrategies.h"
-#include "../../include/log/ILogCompressor.h"
+#include "log/RotationManagerFactory.h"
+#include "log/ILogRotationManager.h"
+#include "log/IRotationStrategy.h"
+#include "log/RotationStrategies.h"
+#include "log/ILogCompressor.h"
 #include <memory>
 #include <fstream>
 #include <sstream>

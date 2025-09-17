@@ -135,7 +135,7 @@ std::wcout << L"[DEBUG] Multi-output enabled" << std::endl;
 LIGHTLOG_DEBUG_MULTIOUTPUT_INFO(L"Multi-output enabled");
 ```
 
-## 最佳实践
+## 使用场景 
 
 1. **开发阶段**: 使用DEBUG_LEVEL_INFO或DEBUG_LEVEL_VERBOSE获取详细信息
 2. **测试阶段**: 使用DEBUG_LEVEL_WARNING减少输出噪音

@@ -10,10 +10,10 @@
 #include <memory>
 #include <thread>
 #include <chrono>
-#include "../include/log/LightLogWriteImpl.h"
-#include "../include/log/ILogRotationManager.h"
-#include "../include/log/RotationManagerFactory.h"
-#include "../include/log/LogCompressor.h"
+#include "log/LightLogWriteImpl.h"
+#include "log/ILogRotationManager.h"
+#include "log/RotationManagerFactory.h"
+#include "log/LogCompressor.h"
 
 /**
  * @brief 示例1：基于文件大小的轮转策略

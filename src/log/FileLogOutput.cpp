@@ -1,5 +1,5 @@
-#include "../../include/log/FileLogOutput.h"
-#include "../../include/log/UniConv.h"
+#include "log/FileLogOutput.h"
+#include "log/UniConv.h"
 #include <filesystem>
 #include <iostream>
 

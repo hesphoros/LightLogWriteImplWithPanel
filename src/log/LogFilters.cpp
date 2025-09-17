@@ -1,4 +1,4 @@
-#include "../../include/log/LogFilters.h"
+#include "log/LogFilters.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>

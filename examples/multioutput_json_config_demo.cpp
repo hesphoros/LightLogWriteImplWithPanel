@@ -6,11 +6,11 @@
 
 #include <iostream>
 #include <memory>
-#include "../include/log/LightLogWriteImpl.h"
-#include "../include/log/MultiOutputLogConfig.h"
-#include "../include/log/ConsoleLogOutput.h"
-#include "../include/log/FileLogOutput.h"
-#include "../include/log/BasicLogFormatter.h"
+#include "log/LightLogWriteImpl.h"
+#include "log/MultiOutputLogConfig.h"
+#include "log/ConsoleLogOutput.h"
+#include "log/FileLogOutput.h"
+#include "log/BasicLogFormatter.h"
 
 void DemonstrateJsonConfigSerialization() {
     std::wcout << L"=== Multi-Output JSON Configuration Demo ===" << std::endl;

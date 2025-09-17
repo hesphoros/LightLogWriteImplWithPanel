@@ -44,25 +44,22 @@ struct LogOutputManagerConfig {
 class LogOutputManager {
 private:
     // Output management
-    std::vector<LogOutputPtr> m_outputs;
-    std::unordered_map<std::wstring, LogOutputPtr> m_outputMap;
-    mutable std::mutex m_outputsMutex;
-
+    std::vector<LogOutputPtr>                                                           m_outputs;
+    std::unordered_map<std::wstring, LogOutputPtr>                                      m_outputMap;
+    mutable std::mutex                                                                  m_outputsMutex;
     // Configuration
-    LogOutputManagerConfig m_config;
-    
+    LogOutputManagerConfig                                                              m_config;
     // Async processing
-    std::queue<std::pair<LogCallbackInfo, std::promise<std::vector<LogOutputResult>>>> m_asyncQueue;
-    std::vector<std::thread> m_workerThreads;
-    std::mutex m_queueMutex;
-    std::condition_variable m_queueCondition;
-    std::atomic<bool> m_shutdown;
-
+    std::queue<std::pair<LogCallbackInfo, std::promise<std::vector<LogOutputResult>>>>  m_asyncQueue;
+    std::vector<std::thread>                                                            m_workerThreads;
+    std::mutex                                                                          m_queueMutex;
+    std::condition_variable                                                             m_queueCondition;
+    std::atomic<bool>                                                                   m_shutdown;
     // Statistics
-    mutable std::mutex m_statsMutex;
-    size_t m_totalWrites;
-    size_t m_successfulWrites;
-    size_t m_failedWrites;
+    mutable std::mutex                                                                  m_statsMutex;
+    size_t                                                                              m_totalWrites;
+    size_t                                                                              m_successfulWrites;
+    size_t                                                                              m_failedWrites;
 
 public:
     /**

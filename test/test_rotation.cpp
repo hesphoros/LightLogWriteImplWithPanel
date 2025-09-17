@@ -13,9 +13,9 @@
  *  @license  GNU General Public License (GPL)
  *****************************************************************************/
 
-#include "include/log/AsyncRotationManager.h"
-#include "include/log/RotationStrategies.h"
-#include "include/log/LogCompressor.h"
+#include "log/AsyncRotationManager.h"
+#include "log/RotationStrategies.h"
+#include "log/LogCompressor.h"
 #include <iostream>
 #include <thread>
 #include <chrono>

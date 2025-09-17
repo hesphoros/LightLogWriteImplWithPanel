@@ -1,5 +1,6 @@
-#include "../../include/log/MultiOutputLogConfig.h"
-#include "../../include/log/LogFilterFactory.h"
+#define _CRT_SECURE_NO_WARNINGS
+#include "log/MultiOutputLogConfig.h"
+#include "log/LogFilterFactory.h"
 #include <fstream>
 #include <codecvt>
 #include <locale>

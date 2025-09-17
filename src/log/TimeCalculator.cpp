@@ -1,4 +1,6 @@
-#include "../../include/log/TimeCalculator.h"
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "log/TimeCalculator.h"
 #include <sstream>
 #include <iomanip>
 #include <cmath>

@@ -1,5 +1,5 @@
-#include "../../include/log/LogFilterFactory.h"
-#include "../../include/log/UniConv.h"
+#include "log/LogFilterFactory.h"
+#include "log/UniConv.h"
 #include <regex>
 
 // 静态成员初始化

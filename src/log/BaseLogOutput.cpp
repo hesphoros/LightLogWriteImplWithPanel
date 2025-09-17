@@ -1,4 +1,4 @@
-#include "../../include/log/BaseLogOutput.h"
+#include "log/BaseLogOutput.h"
 #include <chrono>
 
 BaseLogOutput::BaseLogOutput(const std::wstring& outputName, const std::wstring& outputType)

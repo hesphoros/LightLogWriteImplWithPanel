@@ -1,4 +1,4 @@
-#include "../../include/log/RotationErrorHandler.h"
+#include "log/RotationErrorHandler.h"
 #include <thread>
 #include <sstream>
 #include <iomanip>

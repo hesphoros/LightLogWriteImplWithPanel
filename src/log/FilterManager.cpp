@@ -1,4 +1,4 @@
-#include "../../include/log/FilterManager.h"
+#include "log/FilterManager.h"
 #include <sstream>
 #include <algorithm>
 

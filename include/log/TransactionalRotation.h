@@ -400,7 +400,7 @@ public:
         const std::wstring& sourceFile,
         const std::wstring& archiveFile,
         bool compressionEnabled = false);
-    
+
     /**
      * @brief 创建批量文件清理事务
      * @param filesToDelete 要删除的文件列表

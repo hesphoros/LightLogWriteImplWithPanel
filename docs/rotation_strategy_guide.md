@@ -213,7 +213,7 @@ productionConfig.rotatedFilePattern = L"{basename}_{timestamp}_{size}.{extension
 productionConfig.timestampFormat = L"%Y%m%d_%H%M%S";
 ```
 
-## 最佳实践
+## 使用建议
 
 ### 1. 策略选择指南
 
@@ -441,16 +441,3 @@ std::wcout << L"  Success Rate: " << (stats.successfulRotations * 100.0 / stats.
 std::wcout << L"  Average Time: " << stats.averageRotationTimeMs << L" ms\n";
 std::wcout << L"  Space Saved: " << stats.totalSpaceSavedMB << L" MB\n";
 ```
-
-## 总结
-
-LightLogWriteImpl 的轮转策略系统提供了灵活而强大的日志管理功能。通过合理配置和使用最佳实践，可以实现高效、可靠的日志轮转和归档。
-
-关键要点：
-1. 根据应用场景选择合适的轮转策略
-2. 启用异步操作以优化性能
-3. 设置合理的配置参数
-4. 实施适当的错误处理和监控
-5. 定期检查和优化配置
-
-更多示例代码请参考 `examples/rotation_strategy_examples.cpp` 文件。

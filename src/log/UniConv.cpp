@@ -28,7 +28,8 @@
 *  2025/03/10 | 1.0.0.1   | hesphoros      | Create file
 *****************************************************************************/
 #include "UniConv.h"
-#include "LightLogWriteImpl.h"
+//#include "LightLogWriteImpl.h"
+#define _CRT_SECURE_NO_WARNINGS
 
 
 

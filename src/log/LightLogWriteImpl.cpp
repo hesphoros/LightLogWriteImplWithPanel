@@ -5,15 +5,15 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "UniConv.h"
+#include "log/UniConv.h"
 #include "LightLogWriteImpl.h"
-#include "../../include/log/LogCompressor.h"
-#include "../../include/log/LogOutputManager.h"
-#include "../../include/log/MultiOutputLogConfig.h"
-#include "../../include/log/ConsoleLogOutput.h"
-#include "../../include/log/BasicLogFormatter.h"
-#include "../../include/log/RotationManagerFactory.h"
-#include "../../include/log/DebugUtils.h"
+#include "log/LogCompressor.h"
+#include "log/LogOutputManager.h"
+#include "log/MultiOutputLogConfig.h"
+#include "log/ConsoleLogOutput.h"
+#include "log/BasicLogFormatter.h"
+#include "log/RotationManagerFactory.h"
+#include "log/DebugUtils.h"
 
 const wchar_t* LightLogWrite_Impl::LOG_LEVEL_STRINGS_W[] = {
 	L"[TRACE     ]",   // Trace

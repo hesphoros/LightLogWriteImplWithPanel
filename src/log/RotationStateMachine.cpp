@@ -1,4 +1,4 @@
-#include "../../include/log/RotationStateMachine.h"
+#include "log/RotationStateMachine.h"
 #include <sstream>
 #include <iomanip>
 #include <set>

@@ -1,6 +1,8 @@
-#include "../../include/log/AsyncRotationManager.h"
-#include "../../include/log/RotationStrategies.h"
-#include "../../include/log/LogCompressor.h"
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "log/AsyncRotationManager.h"
+#include "log/RotationStrategies.h"
+#include "log/LogCompressor.h"
 #include <algorithm>
 #include <sstream>
 #include <random>

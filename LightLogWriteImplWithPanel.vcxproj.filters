@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="轮转系统">
-      <UniqueIdentifier>{B8F5D8A4-12C6-4F5A-9A3B-8E7F2D1A5B3C}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -45,9 +42,6 @@
     <ClCompile Include="src\log\MultiOutputLogConfig.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\log\RotationManagerFactory.cpp">
-      <Filter>轮转系统</Filter>
-    </ClCompile>
     <ClCompile Include="src\log\LogCompressor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -70,6 +64,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\log\TransactionalRotation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\LogFilters.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\CompositeFilter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\FilterManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\log\RotationManagerFactory.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,36 +122,6 @@
     <ClInclude Include="include\log\UniConv.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="include\log\ILogRotationManager.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\IRotationStrategy.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\RotationStrategies.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\TimeCalculator.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\RotationStateMachine.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\TransactionalRotation.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\RotationPreChecker.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\AsyncRotationManager.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\RotationErrorHandler.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
-    <ClInclude Include="include\log\RotationManagerFactory.h">
-      <Filter>轮转系统</Filter>
-    </ClInclude>
     <ClInclude Include="include\log\LogCompressor.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -156,6 +132,54 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="include\log\LogRotationManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LogCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ICompositeFilter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\IFilterManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\LogFilters.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\CompositeFilter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\FilterManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\AsyncRotationManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\ILogRotationManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\IRotationStrategy.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationErrorHandler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationPreChecker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationManagerFactory.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationStateMachine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\RotationStrategies.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\TimeCalculator.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\log\TransactionalRotation.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

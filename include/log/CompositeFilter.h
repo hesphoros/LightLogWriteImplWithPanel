@@ -1,5 +1,5 @@
 #pragma once
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "ICompositeFilter.h"
 #include "LogFilters.h"
 #include <algorithm>

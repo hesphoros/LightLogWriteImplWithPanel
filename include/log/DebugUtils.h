@@ -1,11 +1,12 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 
 /**
  * @file DebugUtils.h
  * @brief 统一的调试工具和宏定义
  * @author LightLog Team
  * @date 2025-09-17
- * 
+ *
  * 这个文件提供了项目中统一的调试和日志输出控制机制。
  * 通过编译时宏定义可以控制调试信息的输出，避免在生产环境中产生不必要的输出。
  */

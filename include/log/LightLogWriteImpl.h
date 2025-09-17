@@ -67,17 +67,18 @@
 // Include filter system headers
 #include "ILogFilter.h"
 
-// Forward declarations
-class UniConv;
-class LogOutputManager;
-class ILogOutput;
-class ILogCompressor;
-class LogCompressor;
-class ILogRotationManager;
-class ILogFilter;
+// Forward declarations of classes
+class  UniConv;
+class  LogOutputManager;
+class  ILogOutput;
+class  ILogCompressor;
+class  LogCompressor;
+class  ILogRotationManager;
+class  ILogFilter;
+
+// Forward declarations of structures
 struct MultiOutputLogConfig;
 struct CompressionStatistics;
-
 struct LogCallbackInfo;
 
 /**
@@ -103,22 +104,22 @@ struct LogCallbackInfo;
 struct LightLogWriteInfo {
 	std::wstring                   sLogTagNameVal;  /*!< Log tag name */
 	std::wstring                   sLogContentVal;  /*!< Log content */
-	
+
 	// Default constructor
 	LightLogWriteInfo() = default;
-	
+
 	// Constructor with copy semantics
 	LightLogWriteInfo(const std::wstring& tagName, const std::wstring& content)
 		: sLogTagNameVal(tagName), sLogContentVal(content) {}
-	
+
 	// Constructor with move semantics for better performance
 	LightLogWriteInfo(std::wstring&& tagName, std::wstring&& content)
 		: sLogTagNameVal(std::move(tagName)), sLogContentVal(std::move(content)) {}
-	
+
 	// Mixed constructor (copy tag, move content)
 	LightLogWriteInfo(const std::wstring& tagName, std::wstring&& content)
 		: sLogTagNameVal(tagName), sLogContentVal(std::move(content)) {}
-	
+
 	// Mixed constructor (move tag, copy content)
 	LightLogWriteInfo(std::wstring&& tagName, const std::wstring& content)
 		: sLogTagNameVal(std::move(tagName)), sLogContentVal(content) {}
@@ -225,7 +226,7 @@ public:
 	* It will also handle log overflow according to the specified strategy.
 	*/
 	void WriteLogContent(const std::wstring& sTypeVal, const std::wstring& sMessage);
-	
+
 	// Optimized version with move semantics to reduce string copying
 	void WriteLogContent(std::wstring&& sTypeVal, std::wstring&& sMessage);
 
@@ -614,23 +615,23 @@ private:
 	std::atomic<CallbackHandle>     pNextCallbackHandle;       /*!< Next available callback handle   */
 
 	// Log rotation members - using new modular rotation system
-	std::unique_ptr<ILogRotationManager> rotationManager_;    /*!< Modular rotation manager         */
+	std::unique_ptr<ILogRotationManager> rotationManager_;    /*!< Modular rotation manager          */
 	mutable std::mutex              rotationMutex;             /*!< Mutex for rotation operations    */
 	std::wstring                    currentLogFileName;        /*!< Current active log file name     */
 
 	// Compression system members
-	std::shared_ptr<ILogCompressor> logCompressor_;           /*!< Log compressor instance          */
-	mutable std::mutex              compressorMutex_;         /*!< Mutex for compressor operations  */
+	std::shared_ptr<ILogCompressor> logCompressor_;           /*!< Log compressor instance           */
+	mutable std::mutex              compressorMutex_;         /*!< Mutex for compressor operations   */
 
 	// Multi-output system members
-	std::shared_ptr<LogOutputManager> multiOutputManager;     /*!< Multi-output manager             */
-	std::atomic<bool>               multiOutputEnabled;       /*!< Multi-output enabled flag        */
-	std::unique_ptr<struct MultiOutputLogConfig> multiOutputConfig;  /*!< Multi-output configuration       */
-	mutable std::mutex              multiOutputMutex;         /*!< Mutex for multi-output operations*/
+	std::shared_ptr<LogOutputManager> multiOutputManager;     /*!< Multi-output manager              */
+	std::atomic<bool>               multiOutputEnabled;       /*!< Multi-output enabled flag         */
+	std::unique_ptr<struct MultiOutputLogConfig> multiOutputConfig;  /*!< Multi-output configuratio  */
+	mutable std::mutex              multiOutputMutex;         /*!< Mutex for multi-output operations */
 
 	// Filter system members
-	std::shared_ptr<ILogFilter>     logFilter_;               /*!< Current log filter instance      */
-	mutable std::mutex              filterMutex_;             /*!< Mutex for filter operations      */
+	std::shared_ptr<ILogFilter>     logFilter_;               /*!< Current log filter instance       */
+	mutable std::mutex              filterMutex_;             /*!< Mutex for filter operations       */
 	//------------------------------------------------------------------------------------------------
 	// @} End of Private Members                                                                     +
 	//------------------------------------------------------------------------------------------------

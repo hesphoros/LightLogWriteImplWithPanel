@@ -8,20 +8,20 @@
 #include <iomanip>
 #include <regex>
 
-// 引入我们的日志系统头文件 
-#include "include/log/LightLogWriteImpl.h"
-#include "include/log/LogCompressor.h"
-#include "include/log/LogOutputManager.h"
-#include "include/log/ConsoleLogOutput.h"
-#include "include/log/FileLogOutput.h"
-#include "include/log/BasicLogFormatter.h"
-#include "include/log/UniConv.h"
+// 引入我们的日志系统头文件
+#include "log/LightLogWriteImpl.h"
+#include "log/LogCompressor.h"
+#include "log/LogOutputManager.h"
+#include "log/ConsoleLogOutput.h"
+#include "log/FileLogOutput.h"
+#include "log/BasicLogFormatter.h"
+#include "log/UniConv.h"
 
 // 引入新的过滤器系统头文件
-#include "include/log/ILogFilter.h"
-#include "include/log/LogFilters.h"
-#include "include/log/CompositeFilter.h"
-#include "include/log/FilterManager.h"
+#include "log/ILogFilter.h"
+#include "log/LogFilters.h"
+#include "log/CompositeFilter.h"
+#include "log/FilterManager.h"
 
 // ==================== 日志测试框架工具类 ====================
 /**

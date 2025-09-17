@@ -56,3 +56,4 @@ Desktop.ini
 packages/
 vcpkg_installed/
 LightLog.4a4c1419/
+build/

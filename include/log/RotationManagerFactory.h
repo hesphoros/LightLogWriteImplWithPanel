@@ -1,5 +1,4 @@
-#ifndef INCLUDE_ROTATION_MANAGER_FACTORY_H_
-#define INCLUDE_ROTATION_MANAGER_FACTORY_H_
+#pragma once
 
 #include <memory>
 #include "ILogRotationManager.h"
@@ -42,4 +41,3 @@ private:
     RotationManagerFactory& operator=(const RotationManagerFactory&) = delete;
 };
 
-#endif // INCLUDE_ROTATION_MANAGER_FACTORY_H_

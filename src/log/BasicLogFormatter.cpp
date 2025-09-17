@@ -1,5 +1,5 @@
-#include "../../include/log/BasicLogFormatter.h"
-#include "../../include/log/LightLogWriteImpl.h"  // For LogLevel and LogCallbackInfo
+#include "log/BasicLogFormatter.h"
+#include "log/LightLogWriteImpl.h"  // For LogLevel and LogCallbackInfo
 #include <iomanip>
 #include <sstream>
 #include <ctime>

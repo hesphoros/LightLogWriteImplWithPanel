@@ -1,4 +1,4 @@
-#include "../../include/log/LogOutputManager.h"
+#include "log/LogOutputManager.h"
 #include <algorithm>
 #include <chrono>
 

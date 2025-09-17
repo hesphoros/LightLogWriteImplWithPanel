@@ -14,37 +14,35 @@
  */
 class BaseLogFilter : public virtual ILogFilter {
 protected:
-	std::wstring m_filterName;
-	std::wstring m_description;
-	std::wstring m_version;
-	std::atomic<bool> m_enabled;
-	std::atomic<int> m_priority;
-	
-	mutable std::mutex m_statsMutex;
-	mutable FilterStatistics m_statistics;
-	
-	mutable std::mutex m_configMutex;
-	std::wstring m_configuration;
-	FilterContext m_context;
-	
+	std::wstring                m_filterName;
+	std::wstring                m_description;
+	std::wstring                m_version;
+	std::atomic<bool>           m_enabled;
+	std::atomic<int>            m_priority;
+	mutable std::mutex          m_statsMutex;
+	mutable FilterStatistics    m_statistics;
+	mutable std::mutex          m_configMutex;
+	std::wstring                m_configuration;
+	FilterContext               m_context;
+
 public:
 	explicit BaseLogFilter(const std::wstring& name, const std::wstring& description = L"", const std::wstring& version = L"1.0.0");
 	virtual ~BaseLogFilter() = default;
 	
 	// ILogFilter implementation
-	bool IsEnabled() const override;
-	void SetEnabled(bool enabled) override;
+	bool         IsEnabled() const override;
+	void         SetEnabled(bool enabled) override;
 	std::wstring GetFilterName() const override;
 	
-	bool SetConfiguration(const std::wstring& config) override;
+	bool         SetConfiguration(const std::wstring& config) override;
 	std::wstring GetConfiguration() const override;
-	bool ValidateConfiguration(const std::wstring& config) const override;
+	bool         ValidateConfiguration(const std::wstring& config) const override;
 	
-	int GetPriority() const override;
-	void SetPriority(int priority) override;
+	int          GetPriority() const override;
+	void         SetPriority(int priority) override;
 	
 	FilterStatistics GetStatistics() const override;
-	void ResetStatistics() override;
+	void             ResetStatistics() override;
 	
 	bool CanQuickReject(LogLevel level) const override;
 	bool IsExpensive() const override;
@@ -59,7 +57,7 @@ public:
 	
 protected:
 	// Helper methods for derived classes
-	void UpdateStatistics(FilterOperation operation, std::chrono::milliseconds processingTime) const;
+	void         UpdateStatistics(FilterOperation operation, std::chrono::milliseconds processingTime) const;
 	virtual bool DoValidateConfiguration(const std::wstring& config) const;
 	virtual void DoReset();
 };
@@ -71,7 +69,7 @@ class LevelFilter : public BaseLogFilter {
 private:
 	std::atomic<LogLevel> m_minLevel;
 	std::atomic<LogLevel> m_maxLevel;
-	bool m_hasMaxLevel;
+	bool                  m_hasMaxLevel;
 	
 public:
 	explicit LevelFilter(LogLevel minLevel = LogLevel::Trace, LogLevel maxLevel = LogLevel::Fatal);
@@ -99,10 +97,10 @@ protected:
  */
 class KeywordFilter : public BaseLogFilter {
 private:
-	std::vector<std::wstring> m_includeKeywords;
-	std::vector<std::wstring> m_excludeKeywords;
-	mutable std::mutex m_keywordsMutex;
-	bool m_caseSensitive;
+	std::vector<std::wstring>   m_includeKeywords;
+	std::vector<std::wstring>   m_excludeKeywords;
+	mutable std::mutex          m_keywordsMutex;
+	bool                        m_caseSensitive;
 	
 public:
 	explicit KeywordFilter(bool caseSensitive = false);
@@ -138,10 +136,10 @@ private:
  */
 class RegexFilter : public BaseLogFilter {
 private:
-	std::wregex m_pattern;
-	std::wstring m_patternString;
-	mutable std::mutex m_regexMutex;
-	bool m_patternValid;
+	std::wregex          m_pattern;
+	std::wstring         m_patternString;
+	mutable std::mutex   m_regexMutex;
+	bool                 m_patternValid;
 	
 public:
 	explicit RegexFilter(const std::wstring& pattern = L"");
@@ -168,12 +166,11 @@ private:
  */
 class RateLimitFilter : public BaseLogFilter {
 private:
-	std::atomic<size_t> m_maxPerSecond;
-	std::atomic<size_t> m_maxBurst;
-	
-	mutable std::mutex m_rateMutex;
-	mutable std::chrono::steady_clock::time_point m_lastRefill;
-	mutable size_t m_tokens;
+	std::atomic<size_t>                             m_maxPerSecond;
+	std::atomic<size_t>                             m_maxBurst;
+	mutable std::mutex                              m_rateMutex;
+	mutable std::chrono::steady_clock::time_point   m_lastRefill;
+	mutable size_t                                  m_tokens;
 	
 public:
 	explicit RateLimitFilter(size_t maxPerSecond = 100, size_t maxBurst = 10);
@@ -182,11 +179,11 @@ public:
 	std::unique_ptr<ILogFilter> Clone() const override;
 	
 	// Rate limit specific methods
-	void SetRateLimit(size_t maxPerSecond, size_t maxBurst);
-	size_t GetMaxPerSecond() const;
-	size_t GetMaxBurst() const;
-	size_t GetAvailableTokens() const;
-	
+	void    SetRateLimit(size_t maxPerSecond, size_t maxBurst);
+	size_t  GetMaxPerSecond() const;
+	size_t  GetMaxBurst() const;
+	size_t  GetAvailableTokens() const;
+
 protected:
 	bool DoValidateConfiguration(const std::wstring& config) const override;
 	void DoReset() override;
@@ -202,8 +199,8 @@ class ThreadFilter : public BaseLogFilter {
 private:
 	std::set<std::thread::id> m_allowedThreads;
 	std::set<std::thread::id> m_blockedThreads;
-	mutable std::mutex m_threadsMutex;
-	bool m_useAllowList;
+	mutable std::mutex        m_threadsMutex;
+	bool                      m_useAllowList;
 	
 public:
 	explicit ThreadFilter(bool useAllowList = true);

@@ -2,7 +2,7 @@
 
 #include "ILogFilter.h"
 #include "LogFilters.h"
-#include "../nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 #include <memory>
 #include <string>
 #include <functional>
@@ -44,12 +44,12 @@ using FilterDeserializerFunc = std::function<void(ILogFilter*, const nlohmann::j
  * @brief 过滤器类型信息
  */
 struct FilterTypeInfo {
-    std::wstring typeName;              // 类型名称
-    std::wstring description;           // 类型描述
-    FilterCreatorFunc creator;          // 创建函数
-    FilterSerializerFunc serializer;    // 序列化函数
-    FilterDeserializerFunc deserializer; // 反序列化函数
-    bool isBuiltin;                     // 是否是内置类型
+    std::wstring            typeName;       // 类型名称
+    std::wstring            description;    // 类型描述
+    FilterCreatorFunc       creator;        // 创建函数
+    FilterSerializerFunc    serializer;     // 序列化函数
+    FilterDeserializerFunc  deserializer;   // 反序列化函数
+    bool                    isBuiltin;      // 是否是内置类型
 };
 
 /**
@@ -109,14 +109,14 @@ public:
      * @return 类型名称列表
      */
     static std::vector<std::wstring> GetRegisteredTypes();
-    
+
     /**
      * @brief 获取过滤器类型信息
      * @param typeName 类型名称
      * @return 类型信息，不存在返回nullptr
      */
     static const FilterTypeInfo* GetTypeInfo(const std::wstring& typeName);
-    
+
     /**
      * @brief 检查类型是否已注册
      * @param typeName 类型名称
@@ -126,16 +126,16 @@ public:
 
 private:
     // 内置过滤器的创建和序列化函数
-    static void RegisterBuiltinFilters();
+    static void           RegisterBuiltinFilters();
     static FilterTypeInfo CreateLevelFilterInfo();
     static FilterTypeInfo CreateKeywordFilterInfo();
     static FilterTypeInfo CreateRegexFilterInfo();
     static FilterTypeInfo CreateFrequencyFilterInfo();
     static FilterTypeInfo CreateThreadFilterInfo();
-    
+
     // 序列化辅助函数
-    static std::string WStringToString(const std::wstring& wstr);
+    static std::string  WStringToString(const std::wstring& wstr);
     static std::wstring StringToWString(const std::string& str);
-    static std::string LogLevelToString(LogLevel level);
-    static LogLevel StringToLogLevel(const std::string& str);
+    static std::string  LogLevelToString(LogLevel level);
+    static LogLevel     StringToLogLevel(const std::string& str);
 };

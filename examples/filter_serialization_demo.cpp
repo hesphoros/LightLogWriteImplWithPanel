@@ -1,6 +1,6 @@
-#include "../include/log/LogFilterFactory.h"
-#include "../include/log/MultiOutputLogConfig.h"
-#include "../include/log/LightLogWriteImpl.h"
+#include "log/LogFilterFactory.h"
+#include "log/MultiOutputLogConfig.h"
+#include "log/LightLogWriteImpl.h"
 #include <iostream>
 #include <memory>
 

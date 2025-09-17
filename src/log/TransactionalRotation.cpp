@@ -1,4 +1,4 @@
-#include "../../include/log/TransactionalRotation.h"
+#include "log/TransactionalRotation.h"
 #include <filesystem>
 #include <fstream>
 #include <random>

@@ -1,6 +1,6 @@
-#include "../include/log/FilterManager.h"
-#include "../include/log/LogFilters.h"
-#include "../include/log/CompositeFilter.h"
+#include "log/FilterManager.h"
+#include "log/LogFilters.h"
+#include "CompositeFilter.h"
 #include <iostream>
 #include <memory>
 

@@ -1,4 +1,4 @@
-#include "../../include/log/CompositeFilter.h"
+#include "log/CompositeFilter.h"
 #include <numeric>
 #include <memory>
 
