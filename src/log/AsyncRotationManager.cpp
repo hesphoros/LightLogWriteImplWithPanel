@@ -29,7 +29,7 @@
     // 返回默认失败结果
     RotationResult failResult;
     failResult.success = false;
-    failResult.errorMessage = "未知错误";
+    failResult.errorMessage = "Unknown error";
     return failResult;ile     AsyncRotationManager.cpp
  *  @brief    异步轮转管理器实现
  *  @details  提供非阻塞轮转操作和任务队列管理，集成所有轮转组件
@@ -280,7 +280,7 @@ std::future<RotationResult> AsyncRotationManager::PerformRotationAsync(const std
         if (requestQueue_.size() >= asyncConfig_.maxQueueSize) {
             RotationResult result;
             result.success = false;
-            result.errorMessage = "队列已满";
+            result.errorMessage = "Queue is full";
             request.promise.set_value(result);
             return future;
         }
@@ -454,7 +454,7 @@ void AsyncRotationManager::WorkerThreadLoop(size_t threadId) {
             RotationResult result;
             result.success = false;
             std::string temp(ex.what());
-            result.errorMessage = "异常: " + temp;
+            result.errorMessage = "Exception: " + temp;
             request.promise.set_value(result);
         }
     }
@@ -492,7 +492,7 @@ RotationResult AsyncRotationManager::ProcessRotationRequest(AsyncRotationRequest
         return result;
         
     } catch (const std::exception& ex) {
-        std::string tempMsg = std::string("处理轮转请求异常: ") + ex.what();
+        std::string tempMsg = std::string("Process rotation request exception: ") + ex.what();
         std::wstring errorMsg(tempMsg.begin(), tempMsg.end());
         
         UpdateTaskStatus(request.requestId, RotationTaskStatus::Failed, errorMsg);
@@ -543,7 +543,7 @@ RotationResult AsyncRotationManager::ExecuteRotationTask(std::shared_ptr<Rotatio
         // 执行事务性轮转
         if (asyncConfig_.enableTransaction && transactionManager_) {
             std::wstring archiveFileName = GenerateArchiveFileName(context.currentFileName);
-            auto transaction = transactionManager_->CreateTransaction(L"轮转-" + taskInfo->taskId);
+            auto transaction = transactionManager_->CreateTransaction(L"Rotation-" + taskInfo->taskId);
             
             // 添加文件移动操作
             transaction->AddFileMoveOperation(context.currentFileName, archiveFileName);
