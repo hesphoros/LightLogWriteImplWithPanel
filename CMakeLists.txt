@@ -9,6 +9,9 @@ project(LightLogWriteImplWithPanel
     LANGUAGES CXX
 )
 
+# 引入FetchContent模块
+include(FetchContent)
+
 # C++ 标准设置
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +23,22 @@ if(WIN32 AND MSVC)
     add_compile_options(/utf-8 /wd4996)
 endif()
 
+# 获取并安装UniConv库
+FetchContent_Declare(
+    UniConv
+    GIT_REPOSITORY https://github.com/hesphoros/UniConv.git
+    GIT_TAG main
+)
+
+FetchContent_MakeAvailable(UniConv)
+
+# 确保UniConv安装到项目中
+set_target_properties(UniConv PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+)
+
 # 包含目录
 include_directories(
     include
@@ -29,14 +48,7 @@ include_directories(
     include/miniz
 )
 
-# iconv 库配置
-if(WIN32)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(ICONV_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/iconv/libiconv_1_17d.lib)
-    else()
-        set(ICONV_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/lib/iconv/libiconv_1_17.lib)
-    endif()
-endif()
+# 注意：iconv库现在由UniConv库自动处理
 
 # 源文件
 set(LIGHTLOG_SOURCES
@@ -59,16 +71,17 @@ set(LIGHTLOG_SOURCES
     src/log/RotationStrategies.cpp
     src/log/TimeCalculator.cpp
     src/log/TransactionalRotation.cpp
-    src/log/UniConv.cpp
 )
 
 # 创建静态库
 add_library(lightlog STATIC ${LIGHTLOG_SOURCES})
-if(WIN32)
-    target_link_libraries(lightlog PRIVATE ${ICONV_LIBRARIES})
-endif()
+
+# 链接UniConv库
+target_link_libraries(lightlog PRIVATE UniConv)
+target_include_directories(lightlog PRIVATE ${uniconv_SOURCE_DIR}/include)
 
 # 创建主程序
 add_executable(lightlog_main main.cpp)
-target_link_libraries(lightlog_main lightlog)
+target_link_libraries(lightlog_main lightlog UniConv)
+target_include_directories(lightlog_main PRIVATE ${uniconv_SOURCE_DIR}/include)
 

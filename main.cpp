@@ -15,7 +15,8 @@
 #include "log/ConsoleLogOutput.h"
 #include "log/FileLogOutput.h"
 #include "log/BasicLogFormatter.h"
-#include "log/UniConv.h"
+#include "UniConv.h"
+#include "log/UniConvAdapter.h"
 
 // 引入新的过滤器系统头文件
 #include "log/ILogFilter.h"
@@ -142,7 +143,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Basic logging test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
 };
@@ -209,7 +210,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Callback system test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
 };
@@ -279,7 +280,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Rotation system test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
 };
@@ -344,7 +345,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Compression system test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
 };
@@ -386,7 +387,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Filter system test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
     
@@ -869,7 +870,7 @@ public:
             
         } catch (const std::exception& e) {
             framework.TestFail(L"Performance test exception: " + 
-                UniConv::GetInstance()->LocaleToWideString(e.what()));
+                UniConvAdapter::LocaleToWideString(e.what()));
         }
     }
 };

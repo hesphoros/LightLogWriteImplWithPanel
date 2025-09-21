@@ -1,5 +1,6 @@
 #include "log/ConsoleLogOutput.h"
-#include "log/UniConv.h"
+#include "UniConv.h"
+#include "log/UniConvAdapter.h"
 #include "log/DebugUtils.h"
 #include <iostream>
 #include <map>
@@ -176,7 +177,7 @@ bool ConsoleLogOutput::ShouldUseStderr(LogLevel level) const {
 std::string ConsoleLogOutput::WStringToString(const std::wstring& wstr) const {
     try {
         // Use UniConv to convert wide string to locale
-        return UniConv::GetInstance()->WideStringToLocale(wstr);
+        return UniConvAdapter::WideStringToLocale(wstr);
     }
     catch (...) {
         // Fallback to simple conversion

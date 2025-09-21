@@ -5,7 +5,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "log/UniConv.h"
+#include "UniConv.h"
+#include "log/UniConvAdapter.h"
 #include "LightLogWriteImpl.h"
 #include "log/LogCompressor.h"
 #include "log/LogOutputManager.h"
@@ -112,14 +113,14 @@ void LightLogWrite_Impl::SetLogsFileName(const std::wstring& sFilename)
 
 void LightLogWrite_Impl::SetLogsFileName(const std::string& sFilename)
 {
-	std::wstring wFilename = UniConv::GetInstance()->LocaleToWideString(sFilename);
+	std::wstring wFilename = UniConvAdapter::LocaleToWideString(sFilename);
 	//Utf8ConvertsToUcs4(sFilename)
 	SetLogsFileName(wFilename);
 }
 
 void LightLogWrite_Impl::SetLogsFileName(const std::u16string& sFilename)
 {
-	std::wstring wFilename = UniConv::GetInstance()->U16StringToWString(sFilename);
+	std::wstring wFilename = UniConvAdapter::U16StringToWString(sFilename);
 	SetLogsFileName(wFilename);
 }
 
@@ -133,12 +134,12 @@ void LightLogWrite_Impl::SetLastingsLogs(const std::wstring& sFilePath, const st
 
 void LightLogWrite_Impl::SetLastingsLogs(const std::u16string& sFilePath, const std::u16string& sBaseName)
 {
-	SetLastingsLogs(UniConv::GetInstance()->U16StringToWString(sFilePath), UniConv::GetInstance()->U16StringToWString(sBaseName));
+	SetLastingsLogs(UniConvAdapter::U16StringToWString(sFilePath), UniConvAdapter::U16StringToWString(sBaseName));
 }
 
 void LightLogWrite_Impl::SetLastingsLogs(const std::string& sFilePath, const std::string& sBaseName)
 {
-	SetLastingsLogs(UniConv::GetInstance()->LocaleToWideString(sFilePath), UniConv::GetInstance()->LocaleToWideString(sBaseName));
+	SetLastingsLogs(UniConvAdapter::LocaleToWideString(sFilePath), UniConvAdapter::LocaleToWideString(sBaseName));
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::wstring& sTypeVal, const std::wstring& sMessage)
@@ -209,32 +210,32 @@ void LightLogWrite_Impl::WriteLogContent(std::wstring&& sTypeVal, std::wstring&&
 void LightLogWrite_Impl::WriteLogContent(const std::string& sTypeVal, const std::string& sMessage)
 {
 	// Convert once and reuse, then use move semantics to avoid additional copies
-	std::wstring wTypeVal = UniConv::GetInstance()->LocaleToWideString(sTypeVal);
-	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	std::wstring wTypeVal = UniConvAdapter::LocaleToWideString(sTypeVal);
+	std::wstring wMessage = UniConvAdapter::LocaleToWideString(sMessage);
 	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
 void LightLogWrite_Impl::WriteLogContent(const std::u16string& sTypeVal, const std::u16string& sMessage)
 {
 	// Convert once and reuse, then use move semantics to avoid additional copies
-	std::wstring wTypeVal = UniConv::GetInstance()->U16StringToWString(sTypeVal);
-	std::wstring wMessage = UniConv::GetInstance()->U16StringToWString(sMessage);
+	std::wstring wTypeVal = UniConvAdapter::U16StringToWString(sTypeVal);
+	std::wstring wMessage = UniConvAdapter::U16StringToWString(sMessage);
 	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
 void LightLogWrite_Impl::WriteLogContent(std::string&& sTypeVal, std::string&& sMessage)
 {
 	// Convert once and reuse, then use move semantics to avoid additional copies
-	std::wstring wTypeVal = UniConv::GetInstance()->LocaleToWideString(sTypeVal);
-	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	std::wstring wTypeVal = UniConvAdapter::LocaleToWideString(sTypeVal);
+	std::wstring wMessage = UniConvAdapter::LocaleToWideString(sMessage);
 	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
 void LightLogWrite_Impl::WriteLogContent(std::u16string&& sTypeVal, std::u16string&& sMessage)
 {
 	// Convert once and reuse, then use move semantics to avoid additional copies
-	std::wstring wTypeVal = UniConv::GetInstance()->U16StringToWString(sTypeVal);
-	std::wstring wMessage = UniConv::GetInstance()->U16StringToWString(sMessage);
+	std::wstring wTypeVal = UniConvAdapter::U16StringToWString(sTypeVal);
+	std::wstring wMessage = UniConvAdapter::U16StringToWString(sMessage);
 	WriteLogContent(std::move(wTypeVal), std::move(wMessage));
 }
 
@@ -541,7 +542,7 @@ void LightLogWrite_Impl::WriteLogContent(LogLevel level, std::wstring&& sMessage
 void LightLogWrite_Impl::WriteLogContent(LogLevel level, const std::string& sMessage)
 {
 	// Convert to wstring and use move version for efficiency
-	std::wstring wMessage = UniConv::GetInstance()->LocaleToWideString(sMessage);
+	std::wstring wMessage = UniConvAdapter::LocaleToWideString(sMessage);
 	WriteLogContent(level, std::move(wMessage));
 }
 

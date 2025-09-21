@@ -1,5 +1,6 @@
 #include "log/LogFilterFactory.h"
-#include "log/UniConv.h"
+#include "UniConv.h"
+#include "log/UniConvAdapter.h"
 #include <regex>
 
 // 静态成员初始化
@@ -403,14 +404,14 @@ std::string LogFilterFactory::WStringToString(const std::wstring& wstr) {
     if (wstr.empty()) {
         return std::string();
     }
-    return UniConv::GetInstance()->WideStringToLocale(wstr);
+    return UniConvAdapter::WideStringToLocale(wstr);
 }
 
 std::wstring LogFilterFactory::StringToWString(const std::string& str) {
     if (str.empty()) {
         return std::wstring();
     }
-    return UniConv::GetInstance()->LocaleToWideString(str);
+    return UniConvAdapter::LocaleToWideString(str);
 }
 
 std::string LogFilterFactory::LogLevelToString(LogLevel level) {
