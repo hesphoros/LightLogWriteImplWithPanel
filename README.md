@@ -122,17 +122,53 @@ cd LightLogWriteImplWithPanel
 # 选择Release x64配置并编译
 ```
 
-### Linux (GCC)
+### 作为独立项目构建
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/LightLogWriteImplWithPanel.git
-cd LightLogWriteImplWithPanel
+git clone https://github.com/hesphoros/LightLogWriteImpl.git
+cd LightLogWriteImpl
 
-# 编译项目 (需要CMake支持，即将推出)
+# CMake 构建
 mkdir build && cd build
-cmake ..
-make -j$(nproc)
+cmake .. -DLIGHTLOG_BUILD_EXAMPLES=ON -DLIGHTLOG_BUILD_TESTS=ON
+cmake --build . --config Release
+
+# 运行示例
+./bin/lightlog_demo
+```
+
+### 作为子项目集成
+
+```cmake
+# 在你的CMakeLists.txt中
+add_subdirectory(path/to/LightLogWriteImpl)
+
+# 链接库
+target_link_libraries(your_target PRIVATE LightLog::lightlog)
+```
+
+### 使用FetchContent集成
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(MyProject)
+
+include(FetchContent)
+
+# 获取LightLog
+FetchContent_Declare(
+    LightLog
+    GIT_REPOSITORY https://github.com/hesphoros/LightLogWriteImpl.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(LightLog)
+
+# 创建目标并链接
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE LightLog::lightlog)
 ```
 
 ---

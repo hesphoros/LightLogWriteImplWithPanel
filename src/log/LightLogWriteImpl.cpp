@@ -7,7 +7,7 @@
 #include <chrono>
 #include "UniConv.h"
 #include "log/UniConvAdapter.h"
-#include "LightLogWriteImpl.h"
+#include "log/LightLogWriteImpl.h"
 #include "log/LogCompressor.h"
 #include "log/LogOutputManager.h"
 #include "log/MultiOutputLogConfig.h"

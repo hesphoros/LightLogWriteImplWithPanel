@@ -91,9 +91,10 @@ sudo cmake --install .
 
 | 选项 | 默认值 | 描述 |
 |------|--------|------|
-| `BUILD_SHARED_LIBS` | `OFF` | 构建共享库而非静态库 |
-| `BUILD_TESTS` | `ON` | 构建测试程序 |
-| `BUILD_EXAMPLES` | `ON` | 构建示例程序 |
+| `LIGHTLOG_BUILD_SHARED` | `OFF` | 构建共享库而非静态库 |
+| `LIGHTLOG_BUILD_TESTS` | `主项目时为ON` | 构建测试程序 |
+| `LIGHTLOG_BUILD_EXAMPLES` | `主项目时为ON` | 构建示例程序 |
+| `LIGHTLOG_INSTALL` | `主项目时为ON` | 生成安装目标 |
 | `CMAKE_BUILD_TYPE` | `Release` | 构建类型 (Debug/Release) |
 | `CMAKE_INSTALL_PREFIX` | 系统默认 | 安装路径前缀 |
 
