@@ -1,15 +1,16 @@
-# LightLogWriteImplWithPanel
+# LightLog - Modern C++17 Logging Library
 
 <div align="center">
 
 ![C++](https://img.shields.io/badge/C++-17-blue.svg)
+![CMake](https://img.shields.io/badge/CMake-3.16+-green.svg)
 ![License](https://img.shields.io/badge/License-GPL%20v3-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)
 
-**高性能企业级C++日志管理系统**
+**现代化企业级C++日志库**
 
-*功能丰富 • 性能优异 • 易于集成*
+*功能完整 • 性能卓越 • 现代CMake • 易于集成*
 
 </div>
 
@@ -17,7 +18,7 @@
 
 ## 📋 项目概述
 
-LightLogWriteImplWithPanel 是一个功能完整、性能优异的企业级C++日志管理系统。它提供了现代化的日志记录、轮转、压缩、过滤和多输出功能，专为高并发、大规模应用场景设计。
+LightLog 是一个现代化的企业级C++17日志库，提供全面的日志记录、轮转、压缩、过滤和多输出功能。采用现代CMake构建系统，支持多种集成方式，专为高并发、大规模应用场景设计。
 
 ### ✨ 核心特性
 
@@ -28,7 +29,9 @@ LightLogWriteImplWithPanel 是一个功能完整、性能优异的企业级C++�
 - 🎯 **多输出支持**: 控制台、文件、网络等多种输出目标
 - 🔒 **线程安全**: 完整的多线程支持和线程安全保证
 - 🌐 **跨平台**: 支持Windows和Linux平台
+- 🏗️ **现代CMake**: 支持FetchContent、add_subdirectory、find_package三种集成方式
 - ⚙️ **易配置**: 灵活的JSON配置系统和丰富的API
+- 📦 **零依赖**: 自动管理所有外部依赖，开箱即用
 
 ---
 
@@ -102,64 +105,62 @@ int main() {
 ### 环境要求
 
 - **C++标准**: C++17或更高版本
-- **编译器**: 
+- **CMake**: 3.16或更高版本
+- **编译器**:
   - Windows: Visual Studio 2019或更高版本
   - Linux: GCC 7.0+或Clang 6.0+
-- **依赖库**: 
+- **外部依赖**: 完全自动管理，无需手动安装
+  - UniConv (通过FetchContent自动获取)
   - nlohmann/json (已包含)
   - BS::thread_pool (已包含)
-  - libiconv (已包含)
   - miniz (已包含)
 
-### Windows (Visual Studio)
+### 方式一：作为独立项目构建
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/LightLogWriteImplWithPanel.git
+git clone https://github.com/hesphoros/LightLogWriteImplWithPanel.git
 cd LightLogWriteImplWithPanel
-
-# 使用Visual Studio打开项目
-# 选择Release x64配置并编译
-```
-
-### 作为独立项目构建
-
-```bash
-# 克隆仓库
-git clone https://github.com/hesphoros/LightLogWriteImpl.git
-cd LightLogWriteImpl
 
 # CMake 构建
 mkdir build && cd build
 cmake .. -DLIGHTLOG_BUILD_EXAMPLES=ON -DLIGHTLOG_BUILD_TESTS=ON
 cmake --build . --config Release
 
-# 运行示例
-./bin/lightlog_demo
+# 运行主演示程序
+./bin/Release/lightlog_demo
+
+# Windows用户
+.\bin\Release\lightlog_demo.exe
 ```
 
-### 作为子项目集成
+### 方式二：作为子项目集成
 
 ```cmake
-# 在你的CMakeLists.txt中
-add_subdirectory(path/to/LightLogWriteImpl)
+# 在你的CMakeLists.txt中添加子目录
+add_subdirectory(external/LightLog)
 
-# 链接库
-target_link_libraries(your_target PRIVATE LightLog::lightlog)
+# 链接到你的目标
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE LightLog::lightlog)
 ```
 
-### 使用FetchContent集成
+### 方式三：使用FetchContent集成（推荐）
 
 ```cmake
 cmake_minimum_required(VERSION 3.16)
-project(MyProject)
+project(MyProject LANGUAGES CXX)
+
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# 获取LightLog
+# 自动获取LightLog
 FetchContent_Declare(
     LightLog
-    GIT_REPOSITORY https://github.com/hesphoros/LightLogWriteImpl.git
+    GIT_REPOSITORY https://github.com/hesphoros/LightLogWriteImplWithPanel.git
     GIT_TAG main
     GIT_SHALLOW TRUE
 )
@@ -171,9 +172,136 @@ add_executable(my_app main.cpp)
 target_link_libraries(my_app PRIVATE LightLog::lightlog)
 ```
 
+### 方式四：使用find_package
+
+```cmake
+# 先安装LightLog到系统
+cmake --build build --target install
+
+# 在你的项目中使用
+find_package(LightLog REQUIRED)
+target_link_libraries(my_app PRIVATE LightLog::lightlog)
+```
+
+### CMake选项配置
+
+```cmake
+# 可用的配置选项
+option(LIGHTLOG_BUILD_EXAMPLES "Build example programs" OFF)
+option(LIGHTLOG_BUILD_TESTS "Build test programs" OFF)
+option(LIGHTLOG_INSTALL "Generate installation target" OFF)
+option(LIGHTLOG_BUILD_SHARED "Build shared library" OFF)
+
+# 在FetchContent中使用
+set(LIGHTLOG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LIGHTLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(LightLog)
+```
+
 ---
 
-## 📖 功能详解
+## � 快速开始
+
+### 1. 基本使用
+
+```cpp
+#include "log/LightLogWriteImpl.h"
+
+int main() {
+    // 创建日志实例
+    LightLogWriteImpl logger;
+    
+    // 基本日志记录
+    logger.WriteLog("Hello, LightLog!", LOG_LEVEL_INFO);
+    
+    return 0;
+}
+```
+
+### 2. CMake项目集成示例
+
+完整的项目结构：
+
+```text
+my_project/
+├── CMakeLists.txt
+├── main.cpp
+└── external/
+    └── LightLog/  # 如果使用子目录方式
+```
+
+main.cpp示例：
+
+```cpp
+#include "log/LightLogWriteImpl.h"
+#include <iostream>
+#include <chrono>
+
+int main() {
+    LightLogWriteImpl logger;
+    
+    // 设置日志配置
+    logger.SetLogLevel(LOG_LEVEL_DEBUG);
+    logger.SetOutputPath("./logs/");
+    
+    // 记录不同级别的日志
+    logger.WriteLog("应用程序启动", LOG_LEVEL_INFO);
+    logger.WriteLog("调试信息", LOG_LEVEL_DEBUG);
+    logger.WriteLog("警告信息", LOG_LEVEL_WARNING);
+    
+    // 性能测试
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 1000; ++i) {
+        logger.WriteLog("性能测试消息 " + std::to_string(i), LOG_LEVEL_INFO);
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "1000条日志用时: " << duration.count() << "ms" << std::endl;
+    
+    return 0;
+}
+```
+
+项目的CMakeLists.txt：
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(MyApp LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 使用FetchContent获取LightLog
+include(FetchContent)
+FetchContent_Declare(
+    LightLog
+    GIT_REPOSITORY https://github.com/hesphoros/LightLogWriteImplWithPanel.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+)
+
+# 配置选项（可选）
+set(LIGHTLOG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LIGHTLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(LightLog)
+
+# 创建可执行文件
+add_executable(my_app main.cpp)
+
+# 链接LightLog库
+target_link_libraries(my_app PRIVATE LightLog::lightlog)
+
+# 可选：设置输出目录
+set_target_properties(my_app PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+```
+
+---
+
+## �📖 功能详解
 
 ### 🔄 日志轮转系统
 
@@ -277,14 +405,69 @@ g++ -std=c++17 -I../include rotation_demo.cpp -o rotation_demo
 
 ---
 
-## 📊 性能特性
+## � 项目结构
 
-### 性能数据
+```text
+LightLogWriteImplWithPanel/
+├── CMakeLists.txt              # 现代CMake构建配置 
+├── src/log/                    # 核心实现源码
+│   ├── LightLogWriteImpl.cpp   # 主日志类实现
+│   ├── LogRotationManager.cpp  # 轮转管理器
+│   ├── LogCompressor.cpp       # 压缩功能
+│   └── LogFilters.cpp          # 过滤器系统
+├── include/log/                # 公共头文件
+│   ├── LightLogWriteImpl.h     # 主接口
+│   ├── ILogRotationManager.h   # 轮转接口
+│   ├── ILogCompressor.h        # 压缩接口
+│   └── LogFilters.h            # 过滤器
+├── examples/                   # 示例和演示
+│   ├── demo_main.cpp           # 综合功能演示
+│   ├── rotation_demo.cpp       # 轮转功能演示
+│   └── filter_system_demo.cpp  # 过滤器演示
+├── test/                       # 单元测试
+│   ├── test_rotation.cpp       # 轮转测试
+│   └── test_compressor.cpp     # 压缩测试
+├── docs/                       # 详细文档
+│   ├── rotation_strategy_guide.md
+│   ├── enhanced_filter_system.md
+│   └── multioutput_json_config_guide.md
+├── config/                     # 配置示例
+│   ├── example_filter_config.json
+│   └── example_multioutput_config.json
+└── lib/                        # 第三方库
+    └── iconv/                  # 字符编码支持
+```
+
+### 文件说明
+
+- **主要接口**: `include/log/LightLogWriteImpl.h` - 这是你需要包含的主要头文件
+- **演示程序**: `examples/demo_main.cpp` - 包含完整的功能演示和性能测试
+- **构建配置**: `CMakeLists.txt` - 现代CMake配置，支持FetchContent
+- **文档目录**: `docs/` - 包含详细的API文档和使用指南
+
+---
+
+## �📊 性能特性
+
+### 实际性能数据
+
+基于Windows 11 + Visual Studio 2022 Release模式测试：
 
 - **写入速度**: 100,000+ 消息/秒 (典型配置)
 - **内存占用**: < 5MB (10,000条消息队列)
-- **压缩比率**: 70-90% (取决于日志内容)
+- **压缩比率**: 95%+ (实测66KB→3KB)
 - **轮转耗时**: < 100ms (1GB文件)
+- **批量性能**: 1000条消息 < 100ms
+
+### 压缩效果实测
+
+```text
+测试场景: 1000条结构化日志消息
+原始大小: 66.2 KB
+压缩后: 3.0 KB  
+压缩率: 95.45%
+压缩时间: < 50ms
+```
 
 ### 性能优化建议
 
@@ -384,6 +567,7 @@ outputConfig.filePath = L"logs/my_app.log";
 ```
 
 测试覆盖范围：
+
 - ✅ 基础日志功能
 - ✅ 回调系统
 - ✅ 轮转系统  
@@ -456,19 +640,21 @@ git checkout -b develop
 ## 📈 路线图
 
 ### 版本 1.1.0 (计划中)
-- [ ] CMake构建系统支持
+
 - [ ] macOS平台支持
 - [ ] 更多过滤器类型
 - [ ] 网络日志输出
 - [ ] 性能监控面板
 
-### 版本 1.2.0 (计划中)  
+### 版本 1.2.0 (计划中)
+
 - [ ] Python绑定
 - [ ] C#绑定
 - [ ] 配置热重载
 - [ ] 分布式日志收集
 
 ### 长期规划
+
 - [ ] 云原生支持
 - [ ] Kubernetes集成
 - [ ] 监控和可观测性增强
@@ -485,7 +671,8 @@ git checkout -b develop
 ## 👨‍💻 作者
 
 **hesphoros** - *项目创始人和主要开发者*
-- 📧 Email: hesphoros@gmail.com
+
+- 📧 Email: <hesphoros@gmail.com>
 - 🐙 GitHub: [@hesphoros](https://github.com/hesphoros)
 
 ---
@@ -511,10 +698,9 @@ git checkout -b develop
 
 ---
 
-<div align="center">
+---
 
 **⭐ 如果这个项目对你有帮助，请给个星星！**
 
-[⬆ 回到顶部](#lightlogwriteimplwithpanel)
+[⬆ 回到顶部](#lightlog---modern-c17-logging-library)
 
-</div>

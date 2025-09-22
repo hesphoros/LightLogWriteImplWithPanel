@@ -1,5 +1,5 @@
 # ====================================================================
-# LightLogWriteImpl - Modern CMake Configuration
+# LightLogWriteImplWithPanel - Modern CMake Configuration
 # ====================================================================
 
 cmake_minimum_required(VERSION 3.16)
@@ -11,10 +11,10 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 # 项目声明
-project(LightLogWriteImpl
+project(LightLogWriteImplWithPanel
     VERSION 1.0.0
     DESCRIPTION "Modern C++17 Logging Library with Advanced Features"
-    HOMEPAGE_URL "https://github.com/hesphoros/LightLogWriteImpl"
+    HOMEPAGE_URL "https://github.com/hesphoros/LightLogWriteImplWithPanel"
     LANGUAGES CXX
 )
 
@@ -172,17 +172,12 @@ if(LIGHTLOG_BUILD_EXAMPLES AND LIGHTLOG_IS_MAIN_PROJECT)
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
     
-    # 其他示例程序（排除主演示程序）
-    file(GLOB EXAMPLE_FILES "examples/*.cpp")
-    list(REMOVE_ITEM EXAMPLE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/examples/demo_main.cpp")
-    foreach(EXAMPLE_FILE ${EXAMPLE_FILES})
-        get_filename_component(EXAMPLE_NAME ${EXAMPLE_FILE} NAME_WE)
-        add_executable(${EXAMPLE_NAME} ${EXAMPLE_FILE})
-        target_link_libraries(${EXAMPLE_NAME} PRIVATE LightLog::lightlog)
-        set_target_properties(${EXAMPLE_NAME} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
-        )
-    endforeach()
+    # 简单演示程序
+    add_executable(simple_demo examples/simple_demo.cpp)
+    target_link_libraries(simple_demo PRIVATE LightLog::lightlog)
+    set_target_properties(simple_demo PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
+    )
 endif()
 
 # 测试程序

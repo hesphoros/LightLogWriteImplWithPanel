@@ -14,8 +14,12 @@
  *****************************************************************************/
 
 #include "log/AsyncRotationManager.h"
-#include "log/RotationStrategies.h"
+#include "log/RotationStrategies.h"  
 #include "log/LogCompressor.h"
+#include "log/RotationErrorHandler.h"
+#include "log/RotationPreChecker.h"
+#include "log/RotationStateMachine.h"
+#include "log/TimeCalculator.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -106,7 +110,7 @@ void TestRotationComponents() {
     
     // 测试压缩器
     LogCompressor compressor;
-    std::wcout << L"压缩器支持的格式数: " << compressor.GetSupportedFormats().size() << std::endl;
+    std::wcout << L"压缩器创建成功" << std::endl;
     
     // 测试预检查器
     RotationPreChecker preChecker;

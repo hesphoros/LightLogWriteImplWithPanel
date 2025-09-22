@@ -1,4 +1,4 @@
-#include "include/log/LogCompressor.h"
+#include "log/LogCompressor.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
