@@ -75,6 +75,22 @@ public:
      */
     void SetCompressor(std::shared_ptr<ILogCompressor> compressor);
     
+    std::future<RotationResult> PerformRotationAsync(const std::wstring& currentFileName,
+        const RotationTrigger& trigger) override;
+
+    size_t GetPendingTaskCount() const override;
+
+    
+    size_t GetActiveTaskCount() const override;
+
+    /**
+     * @brief 取消所有等待的轮转任务
+     * @return 取消的任务数量
+     */
+    size_t CancelPendingTasks() override;
+
+    bool WaitForAllTasks(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) override;
+
     /**
      * @brief 获取压缩器
      * @return 压缩器实例
