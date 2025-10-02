@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/CMakeFiles/uniconv-populate"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/CMakeFiles/uniconv-populate.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/CMakeFiles/uniconv-populate-complete.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-build.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-configure.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-download.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-install.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-patch.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-test.rule"
+		},
+		{
+			"file" : "/home/runner/work/LightLogWriteImplWithPanel/LightLogWriteImplWithPanel/build_test/_deps/uniconv-subbuild/uniconv-populate-prefix/src/uniconv-populate-stamp/uniconv-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"uniconv-populate"
+		],
+		"name" : "uniconv-populate"
+	}
+}
