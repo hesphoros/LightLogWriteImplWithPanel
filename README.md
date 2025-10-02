@@ -796,13 +796,89 @@ cmake --build . --config Release
 
 ## 📚 API文档
 
-详细的API文档请参考：
+### 核心类和接口
 
-- **增强过滤器系统**: [docs/enhanced_filter_system.md](docs/enhanced_filter_system.md)
-- **轮转策略指南**: [docs/rotation_strategy_guide.md](docs/rotation_strategy_guide.md)
-- **多输出配置**: [docs/multioutput_json_config_guide.md](docs/multioutput_json_config_guide.md)
-- **调试系统**: [docs/debug_system_guide.md](docs/debug_system_guide.md)
-- **轮转系统API**: [docs/rotation_strategy_api.md](docs/rotation_strategy_api.md)
+#### LightLogWrite_Impl - 主日志类
+
+主要的日志记录器类，提供所有日志功能。
+
+**构造函数：**
+```cpp
+LightLogWrite_Impl(
+    size_t maxQueueSize = 500000,                     // 最大队列大小
+    LogQueueOverflowStrategy strategy = Block,        // 队列溢出策略
+    size_t reportInterval = 100,                      // 丢弃报告间隔
+    std::shared_ptr<ILogCompressor> compressor = nullptr  // 压缩器（可选）
+);
+```
+
+**核心方法：**
+```cpp
+// 文件配置
+void SetLastingsLogs(const std::wstring& dir, const std::wstring& baseName);
+void SetLogsFileName(const std::wstring& filename);
+
+// 日志记录
+void WriteLogContent(LogLevel level, const std::wstring& message);
+void WriteLogTrace(const std::wstring& message);
+void WriteLogDebug(const std::wstring& message);
+void WriteLogInfo(const std::wstring& message);
+void WriteLogWarning(const std::wstring& message);
+void WriteLogError(const std::wstring& message);
+// ... 其他级别类似
+
+// 日志级别控制
+void SetMinLogLevel(LogLevel level);
+LogLevel GetMinLogLevel() const;
+
+// 轮转配置
+void SetLogRotationConfig(const LogRotationConfig& config);
+LogRotationConfig GetLogRotationConfig() const;
+void ForceLogRotation();
+std::future<bool> ForceLogRotationAsync();
+size_t GetCurrentLogFileSize() const;
+
+// 回调系统
+CallbackHandle SubscribeToLogEvents(const LogCallback& callback, LogLevel minLevel);
+bool UnsubscribeFromLogEvents(CallbackHandle handle);
+void ClearAllLogCallbacks();
+size_t GetCallbackCount() const;
+
+// 压缩器管理
+void SetCompressor(std::shared_ptr<ILogCompressor> compressor);
+std::shared_ptr<ILogCompressor> GetCompressor() const;
+CompressionStatistics GetCompressionStatistics() const;
+
+// 多输出系统
+void SetMultiOutputEnabled(bool enabled);
+bool AddLogOutput(std::shared_ptr<ILogOutput> output);
+bool RemoveLogOutput(const std::wstring& outputName);
+bool LoadMultiOutputConfigFromJson(const std::wstring& configPath);
+bool SaveMultiOutputConfigToJson(const std::wstring& configPath);
+
+// 过滤器系统
+void SetLogFilter(std::shared_ptr<ILogFilter> filter);
+std::shared_ptr<ILogFilter> GetLogFilter() const;
+void ClearLogFilter();
+bool HasLogFilter() const;
+
+// 队列管理
+size_t GetDiscardCount() const;
+void ResetDiscardCount();
+```
+
+### 详细文档
+
+更多详细信息请参考以下文档：
+
+- **[增强过滤器系统](docs/enhanced_filter_system.md)** - 过滤器的完整使用指南
+- **[轮转策略指南](docs/rotation_strategy_guide.md)** - 日志轮转策略详解
+- **[轮转系统API](docs/rotation_strategy_api.md)** - 轮转系统API参考
+- **[轮转系统说明](docs/rotation_system.md)** - 轮转系统架构说明
+- **[多输出配置](docs/multioutput_json_config_guide.md)** - JSON配置指南
+- **[过滤器序列化](docs/filter_serialization_guide.md)** - 过滤器序列化指南
+- **[调试系统](docs/debug_system_guide.md)** - 调试功能指南
+- **[CMake构建](docs/cmake_build_guide.md)** - CMake构建配置详解
 
 ---
 
@@ -896,12 +972,14 @@ git checkout -b develop
 
 ## 🙏 致谢
 
-特别感谢以下开源项目：
+特别感谢以下开源项目和技术：
 
-- [nlohmann/json](https://github.com/nlohmann/json) - 优秀的JSON库
-- [BS::thread_pool](https://github.com/bshoshany/thread-pool) - 高性能线程池
-- [libiconv](https://www.gnu.org/software/libiconv/) - 字符编码转换
-- [miniz](https://github.com/richgel999/miniz) - 轻量级ZIP压缩库
+- **[nlohmann/json](https://github.com/nlohmann/json)** - 优秀的JSON库，用于配置文件解析
+- **[BS::thread_pool](https://github.com/bshoshany/thread-pool)** - 高性能线程池，用于异步任务处理
+- **[UniConv](https://github.com/hesphoros/UniConv)** - 字符编码转换库
+- **[miniz](https://github.com/richgel999/miniz)** - 轻量级ZIP压缩库，提供压缩功能
+
+感谢所有为本项目贡献代码、报告问题和提供建议的开发者！
 
 ---
 
@@ -911,7 +989,24 @@ git checkout -b develop
 
 1. 查看 [文档](docs/) 和 [示例](examples/)
 2. 搜索 [已有Issues](https://github.com/hesphoros/LightLogWriteImplWithPanel/issues)
-3. 创建新Issue或发送邮件
+3. 创建新Issue或发送邮件至 <hesphoros@gmail.com>
+
+### 常见问题
+
+**Q: 如何在多线程环境中使用？**  
+A: LightLog完全线程安全，可以从多个线程同时调用日志方法，无需额外同步。
+
+**Q: 日志文件会自动轮转吗？**  
+A: 是的，配置好轮转策略后，日志会自动轮转。你也可以手动调用`ForceLogRotation()`强制轮转。
+
+**Q: 压缩功能会影响性能吗？**  
+A: 压缩是异步进行的，不会阻塞日志写入。你可以调整`workerThreadCount`和`compressionLevel`来平衡性能和压缩率。
+
+**Q: 如何只记录错误和警告级别的日志？**  
+A: 使用`SetMinLogLevel(LogLevel::Warning)`或设置级别过滤器。
+
+**Q: 支持Unicode字符吗？**  
+A: 完全支持，建议使用`std::wstring`接口来处理Unicode文本。
 
 ---
 
