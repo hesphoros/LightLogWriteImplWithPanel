@@ -1,0 +1,2 @@
+/usr/bin/ar qc libUniConv.a CMakeFiles/UniConv.dir/src/UniConv.cpp.o CMakeFiles/UniConv.dir/src/iconv.c.o CMakeFiles/UniConv.dir/src/localcharset.c.o CMakeFiles/UniConv.dir/src/relocatable.c.o
+/usr/bin/ranlib libUniConv.a
