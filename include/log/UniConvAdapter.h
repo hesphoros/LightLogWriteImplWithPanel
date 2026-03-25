@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UniConv.h"
+#include "UniConv/UniConv.h"
 #include <string>
 #include <codecvt>
 #include <locale>
@@ -19,13 +19,13 @@ public:
      */
     static std::wstring LocaleToWideString(const std::string& input) {
         // Get current system encoding
-        std::string currentEncoding = UniConv::GetInstance()->GetCurrentSystemEncoding();
+        std::string currentEncoding = UniConv::ThreadLocal().GetCurrentSystemEncoding();
         if (currentEncoding.empty()) {
             currentEncoding = "UTF-8"; // fallback to UTF-8
         }
         
         // Convert from current encoding to UTF-8
-        auto result = UniConv::GetInstance()->ConvertEncodingFast(input, currentEncoding.c_str(), "UTF-8");
+        auto result = UniConv::ThreadLocal().ConvertEncodingFast(input, currentEncoding.c_str(), "UTF-8");
         if (!result.IsSuccess()) {
             // Fallback: use standard library conversion
             std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
@@ -93,13 +93,13 @@ public:
         }
         
         // Get current system encoding
-        std::string currentEncoding = UniConv::GetInstance()->GetCurrentSystemEncoding();
+        std::string currentEncoding = UniConv::ThreadLocal().GetCurrentSystemEncoding();
         if (currentEncoding.empty()) {
             currentEncoding = "UTF-8"; // fallback to UTF-8
         }
         
         // Convert from UTF-8 to current encoding
-        auto result = UniConv::GetInstance()->ConvertEncodingFast(utf8_str, "UTF-8", currentEncoding.c_str());
+        auto result = UniConv::ThreadLocal().ConvertEncodingFast(utf8_str, "UTF-8", currentEncoding.c_str());
         if (!result.IsSuccess()) {
             // Fallback: return UTF-8 string directly
             return utf8_str;

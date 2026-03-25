@@ -15,7 +15,7 @@
 #include "log/ConsoleLogOutput.h"
 #include "log/FileLogOutput.h"
 #include "log/BasicLogFormatter.h"
-#include "UniConv.h"
+#include "Uniconv/UniConv.h"
 #include "log/UniConvAdapter.h"
 
 // 引入新的过滤器系统头文件
@@ -885,14 +885,14 @@ public:
 int main() {
     try {
         // 初始化Unicode编码转换器，设置默认编码为UTF-8
-        UniConv::GetInstance()->SetDefaultEncoding("UTF-8");
+        UniConv::ThreadLocal().SetDefaultEncoding("UTF-8");
         
         std::wcout << L"=== LightLogWriteImpl Integrated Test Suite ===" << std::endl;
         std::wcout << L"Version: Optimized Refactored Edition" << std::endl;
         
         // 创建并配置日志压缩器
         LogCompressorConfig compressorConfig;
-        compressorConfig.workerThreadCount = std::thread::hardware_concurrency();  // 使用硬件并发数作为工作线程数
+        compressorConfig.workerThreadCount = std::thread::hardware_concurrency();   // 使用硬件并发数作为工作线程数
         compressorConfig.algorithm = CompressionAlgorithm::ZIP;                     // 使用ZIP压缩算法
         compressorConfig.compressionLevel = 6;                                      // 设置压缩级别为6（平衡压缩率和速度）
         auto compressor = std::make_shared<LogCompressor>(compressorConfig);
@@ -914,7 +914,7 @@ int main() {
         
         // 创建分离控制台输出
         auto separateConsoleOutput = std::make_shared<ConsoleLogOutput>(
-            L"SeparateConsole",    // 输出名称
+            L"SeparateConsole",     // 输出名称
             true,                   // 使用stderr输出错误级别
             true,                   // 启用颜色
             true                    // 启用分离控制台！！！
