@@ -15,7 +15,7 @@
 #include "log/ConsoleLogOutput.h"
 #include "log/FileLogOutput.h"
 #include "log/BasicLogFormatter.h"
-#include "Uniconv/UniConv.h"
+#include "UniConv/UniConv.h"
 #include "log/UniConvAdapter.h"
 
 // 引入新的过滤器系统头文件

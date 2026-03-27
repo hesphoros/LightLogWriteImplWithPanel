@@ -40,18 +40,33 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# FetchContent模块
-include(FetchContent)
+# 第三方依赖（Git Submodule）
+set(LIGHTLOG_THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
+set(LIGHTLOG_UNICONV_DIR "${LIGHTLOG_THIRD_PARTY_DIR}/UniConv")
+set(LIGHTLOG_BS_DIR "${LIGHTLOG_THIRD_PARTY_DIR}/BS_thread_pool")
+set(LIGHTLOG_MINIZ_DIR "${LIGHTLOG_THIRD_PARTY_DIR}/miniz-cpp")
 
-# UniConv依赖
-FetchContent_Declare(
-    UniConv
-    GIT_REPOSITORY https://github.com/hesphoros/UniConv.git
-    GIT_TAG main
-    GIT_SHALLOW TRUE
-)
+if(NOT EXISTS "${LIGHTLOG_UNICONV_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR
+        "UniConv submodule not found at ${LIGHTLOG_UNICONV_DIR}. "
+        "Run: git submodule update --init --recursive")
+endif()
+if(NOT EXISTS "${LIGHTLOG_BS_DIR}/include/BS_thread_pool.hpp")
+    message(FATAL_ERROR
+        "BS_thread_pool submodule not found at ${LIGHTLOG_BS_DIR}. "
+        "Run: git submodule update --init --recursive")
+endif()
+if(NOT EXISTS "${LIGHTLOG_MINIZ_DIR}/zip_file.hpp")
+    message(FATAL_ERROR
+        "miniz-cpp submodule not found at ${LIGHTLOG_MINIZ_DIR}. "
+        "Run: git submodule update --init --recursive")
+endif()
 
-FetchContent_MakeAvailable(UniConv)
+# UniConv 作为子项目引入，关闭其非必要构建目标
+set(UNICONV_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(UNICONV_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+set(UNICONV_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+add_subdirectory("${LIGHTLOG_UNICONV_DIR}" "${CMAKE_BINARY_DIR}/third_party/uniconv")
 
 # 源文件列表
 set(LIGHTLOG_SOURCES
@@ -137,9 +152,9 @@ target_compile_features(lightlog PUBLIC cxx_std_17)
 target_include_directories(lightlog
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/BS>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/nlohmann>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/miniz>
+        $<BUILD_INTERFACE:${LIGHTLOG_BS_DIR}/include>
+        $<BUILD_INTERFACE:${LIGHTLOG_MINIZ_DIR}>
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -14,7 +14,7 @@
 #include <fstream>
 #include <future>
 #include <memory>
-#include <BS/BS_thread_pool.hpp>
+#include <BS_thread_pool.hpp>
 
 /*****************************************************************************
  *  LogCompressor

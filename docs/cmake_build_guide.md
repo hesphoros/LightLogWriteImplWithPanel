@@ -2,6 +2,9 @@
 
 本文档介绍如何使用CMake构建LightLogWriteImplWithPanel项目。
 
+> 依赖说明：本项目的内部第三方依赖（`UniConv`、`BS::thread_pool`、`miniz-cpp`）通过 Git Submodule 管理。  
+> 首次克隆后请先执行：`git submodule update --init --recursive`。
+
 ## 📋 环境要求
 
 ### 基础要求
@@ -209,7 +212,7 @@ target_link_libraries(your_target lightlog)
 
 ### 方法3: FetchContent
 
-从Git仓库获取：
+从Git仓库获取（用于将 LightLog 集成到你的项目中）：
 
 ```cmake
 include(FetchContent)
@@ -224,6 +227,11 @@ FetchContent_MakeAvailable(LightLog)
 
 target_link_libraries(your_target lightlog)
 ```
+
+说明：
+- `FetchContent` 只负责把 LightLog 源码拉入你的项目；
+- LightLog 内部依赖仍由其仓库内的 `third_party` 子模块提供；
+- 若你直接 `git clone` LightLog 源码开发，请先初始化子模块。
 
 ## 🏗️ 交叉编译
 

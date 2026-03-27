@@ -36,14 +36,14 @@
 #pragma push_macro("max")
 #undef min
 #undef max
-#include "BS/BS_thread_pool.hpp"
+#include "BS_thread_pool.hpp"
 #pragma pop_macro("max")
 #pragma pop_macro("min")
 #else
-#include "BS/BS_thread_pool.hpp"
+#include "BS_thread_pool.hpp"
 #endif
 
-#include "miniz/zip_file.hpp"
+#include "zip_file.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>

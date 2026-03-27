@@ -31,6 +31,9 @@ add_subdirectory(../path/to/LightLogWriteImpl)
 target_link_libraries(example_app PRIVATE LightLog::lightlog)
 ```
 
+> Note: If your local LightLog repository is freshly cloned, initialize submodules first:
+> `git submodule update --init --recursive`
+
 ### Method 3: Using installed LightLog
 
 If you have installed LightLog on your system:

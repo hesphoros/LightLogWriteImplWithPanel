@@ -1,0 +1,9 @@
+[submodule "third_party/UniConv"]
+	path = third_party/UniConv
+	url = https://github.com/hesphoros/UniConv.git
+[submodule "third_party/BS_thread_pool"]
+	path = third_party/BS_thread_pool
+	url = https://github.com/bshoshany/thread-pool.git
+[submodule "third_party/miniz-cpp"]
+	path = third_party/miniz-cpp
+	url = https://github.com/tfussell/miniz-cpp.git
