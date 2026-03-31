@@ -461,7 +461,10 @@ private:
 	 */
 	void CheckAndPerformRotation();
 
-
+	/**
+	 * @brief Reopen the log file stream after rotation or close
+	 */
+	void ReopenLogFileStream();
 
 	/**
 	 * @brief Generate archive file name with timestamp
@@ -588,6 +591,7 @@ private:
 	// Section Name: Private Members @{                                                              +
 	//------------------------------------------------------------------------------------------------
 	std::wofstream                  pLogFileStream;            /*!< Log file stream                  */
+	std::mutex                      pFileStreamMutex;          /*!< Mutex for pLogFileStream access  */
 	mutable std::mutex              pLogWriteMutex;            /*!< Log write mutex                  */
 	std::queue<LightLogWriteInfo>   pLogWriteQueue;            /*!< Log write queue FIFO             */
 	std::condition_variable         pWrittenCondVar;           /*!< Cond for waking log write thread */

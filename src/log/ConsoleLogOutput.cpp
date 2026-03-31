@@ -391,7 +391,7 @@ void ConsoleLogOutput::ConsoleThreadProc() {
                 } else {
                     std::wcout << L"[ERROR] Pipe handle is invalid!" << std::endl;
                 }
-                // Fallback for non-Windows: use standard console output
+#else
                 std::string colorCode;
                 std::string resetCode;
                 
@@ -401,8 +401,9 @@ void ConsoleLogOutput::ConsoleThreadProc() {
                 }
                 
                 std::string logStr = WStringToString(item.formattedLog);
+                std::string levelPrefix = GetLogLevelPrefix(item.level);
                 std::ostream& outStream = ShouldUseStderr(item.level) ? std::cerr : std::cout;
-                outStream << colorCode << logStr << resetCode << std::endl;
+                outStream << colorCode << levelPrefix << " " << logStr << resetCode << std::endl;
                 outStream.flush();
 #endif
             }

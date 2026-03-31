@@ -105,6 +105,7 @@ LightLogWrite_Impl::~LightLogWrite_Impl()
 void LightLogWrite_Impl::SetLogsFileName(const std::wstring& sFilename)
 {
 	std::lock_guard<std::mutex> sWriteLock(pLogWriteMutex);
+	std::lock_guard<std::mutex> streamLock(pFileStreamMutex);
 	if (pLogFileStream.is_open())
 		pLogFileStream.close();
 	ChecksDirectory(sFilename);
@@ -295,10 +296,6 @@ void LightLogWrite_Impl::CreateLogsFileUnlocked()
 void LightLogWrite_Impl::RunWriteThread()
 {
 	while (true) {
-		if (bHasLogLasting)
-			if (bLastingTmTags != (GetCurrsTimerTm().tm_hour > 12))
-				CreateLogsFile();
-
 		LightLogWriteInfo sLogMessageInf;
 
 		{
@@ -315,14 +312,23 @@ void LightLogWrite_Impl::RunWriteThread()
 			}
 		}
 
-		// 在锁外检查并执行日志轮转，避免死锁
-		CheckAndPerformRotation();
-		if (!sLogMessageInf.sLogContentVal.empty() && pLogFileStream.is_open()) {
-			pLogFileStream << sLogMessageInf.sLogTagNameVal << L"-//>>>" << GetCurrentTimer() << " : " << sLogMessageInf.sLogContentVal << "\n";
+		{
+			std::lock_guard<std::mutex> streamLock(pFileStreamMutex);
+
+			if (bHasLogLasting)
+				if (bLastingTmTags != (GetCurrsTimerTm().tm_hour > 12))
+					CreateLogsFileUnlocked();
+
+			CheckAndPerformRotation();
+			if (!sLogMessageInf.sLogContentVal.empty() && pLogFileStream.is_open()) {
+				pLogFileStream << sLogMessageInf.sLogTagNameVal << L"-//>>>" << GetCurrentTimer() << " : " << sLogMessageInf.sLogContentVal << "\n";
+			}
 		}
 	}
-	pLogFileStream.close();
-
+	{
+		std::lock_guard<std::mutex> streamLock(pFileStreamMutex);
+		pLogFileStream.close();
+	}
 }
 
 void LightLogWrite_Impl::ChecksDirectory(const std::wstring& sFilename)
@@ -672,27 +678,22 @@ void LightLogWrite_Impl::ForceLogRotation()
 {
 	if (!rotationManager_) {
 		return;
-	}	try {
-		// CRITICAL: Flush and close the current log file stream before rotation
+	}
+
+	try {
+		std::lock_guard<std::mutex> streamLock(pFileStreamMutex);
+
 		if (pLogFileStream.is_open()) {
-			pLogFileStream.flush();  // Force write all buffered data
-			pLogFileStream.close();  // Close the file handle
-			
-			// Give the OS time to fully release the file handle
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			pLogFileStream.flush();
+			pLogFileStream.close();
 		}
 		
-		// Create rotation trigger for manual rotation
 		RotationTrigger trigger;
 		trigger.manualRequested = true;
 		trigger.reason = L"Manual rotation requested";
 		
-
-		
-		// Use async rotation with timeout to avoid blocking
 		auto rotationFuture = rotationManager_->PerformRotationAsync(currentLogFileName, trigger);
 		
-		// Wait with timeout to prevent blocking
 		RotationResult result;
 		if (rotationFuture.wait_for(std::chrono::seconds(30)) == std::future_status::ready) {
 			result = rotationFuture.get();
@@ -700,68 +701,9 @@ void LightLogWrite_Impl::ForceLogRotation()
 			if (result.success && !result.newFileName.empty()) {
 				currentLogFileName = result.newFileName;
 			}
-		} else {
-			// Rotation timed out
 		}
 		
-		// CRITICAL: Reopen the log file stream after rotation
-		if (!pLogFileStream.is_open()) {
-			std::cout << "[LogRotation] Attempting to reopen log file...\n";
-			std::cout << "[LogRotation] Target file: " << std::string(currentLogFileName.begin(), currentLogFileName.end()) << "\n";
-			
-			// Add a small delay to ensure file system operations complete
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			
-			// Try multiple times with exponential backoff
-			int maxRetries = 5;
-			bool reopened = false;
-			
-			for (int retry = 0; retry < maxRetries && !reopened; ++retry) {
-				if (retry > 0) {
-					std::cout << "[LogRotation] Retry " << retry << " to reopen file...\n";
-					std::this_thread::sleep_for(std::chrono::milliseconds(200 * retry)); // Exponential backoff
-				}
-				
-				try {
-					// Clear any error flags first
-					pLogFileStream.clear();
-					
-					// Attempt to open the file
-					pLogFileStream.open(currentLogFileName.c_str(), std::ios::app);
-					
-					if (pLogFileStream.is_open()) {
-						// Set encoding
-						pLogFileStream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-						
-						// Test write to ensure the file is actually writable
-						std::streampos currentPos = pLogFileStream.tellp();
-						pLogFileStream << L""; // Empty write to test
-						pLogFileStream.flush();
-						
-						if (pLogFileStream.good()) {
-							reopened = true;
-							std::cout << "[LogRotation] Log file reopened successfully on attempt " << (retry + 1) << "\n";
-						} else {
-							std::cout << "[LogRotation] File opened but not writable, closing and retrying...\n";
-							pLogFileStream.close();
-						}
-					} else {
-						std::cout << "[LogRotation] Failed to open file on attempt " << (retry + 1) << "\n";
-					}
-				}
-				catch (const std::exception& e) {
-					std::cout << "[LogRotation] Exception during file reopen attempt " << (retry + 1) << ": " << e.what() << "\n";
-					if (pLogFileStream.is_open()) {
-						pLogFileStream.close();
-					}
-				}
-			}
-			
-			if (!reopened) {
-				std::cout << "[LogRotation] ERROR: Failed to reopen log file after " << maxRetries << " attempts\n";
-				std::cout << "[LogRotation] Will continue without log file - new logs may be lost!\n";
-			}
-		}
+		ReopenLogFileStream();
 	}
 	catch (const std::exception& e) {
 		std::cerr << "[LogRotation] Exception in ForceLogRotation: " << e.what() << "\n";
@@ -773,41 +715,25 @@ void LightLogWrite_Impl::ForceLogRotation()
 std::future<bool> LightLogWrite_Impl::ForceLogRotationAsync()
 {
 	if (!rotationManager_) {
-		// Return a future with false if no rotation manager
 		std::promise<bool> promise;
 		promise.set_value(false);
 		return promise.get_future();
 	}
 
-	try {
-		// Create manual rotation trigger
-		RotationTrigger trigger;
-		trigger.manualRequested = true;
-		trigger.reason = L"Async manual rotation requested";
-
-		// Perform asynchronous rotation
-		auto rotationFuture = rotationManager_->PerformRotationAsync(currentLogFileName, trigger);
-
-		// Transform RotationResult to bool
-		return std::async(std::launch::async, [this, rotationResult = std::move(rotationFuture)]() mutable -> bool {
-			try {
-				auto result = rotationResult.get();
-				if (result.success && !result.newFileName.empty()) {
-					currentLogFileName = result.newFileName;
-				}
-				return result.success;
-			}
-			catch (...) {
-				return false;
-			}
-			});
-	}
-	catch (const std::exception& e) {
-		std::cerr << "[LogRotation] Exception in ForceLogRotationAsync: " << e.what() << "\n";
-		std::promise<bool> promise;
-		promise.set_value(false);
-		return promise.get_future();
-	}
+	return std::async(std::launch::async, [this]() -> bool {
+		try {
+			ForceLogRotation();
+			std::lock_guard<std::mutex> streamLock(pFileStreamMutex);
+			return pLogFileStream.is_open();
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[LogRotation] Exception in ForceLogRotationAsync: " << e.what() << "\n";
+			return false;
+		}
+		catch (...) {
+			return false;
+		}
+	});
 }
 
 size_t LightLogWrite_Impl::GetPendingRotationTasks() const
@@ -860,60 +786,58 @@ size_t LightLogWrite_Impl::GetCurrentLogFileSizeUnlocked() const
 	return 0;
 }
 
+void LightLogWrite_Impl::ReopenLogFileStream()
+{
+	if (pLogFileStream.is_open()) {
+		return;
+	}
+
+	pLogFileStream.clear();
+	pLogFileStream.open(currentLogFileName.c_str(), std::ios::app);
+	if (pLogFileStream.is_open()) {
+		pLogFileStream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+	}
+}
+
 void LightLogWrite_Impl::CheckAndPerformRotation()
 {
 	if (!rotationManager_) {
-		return; // No rotation manager available
+		return;
 	}
 
 	try {
-		// Check if rotation is needed
+		if (pLogFileStream.is_open()) {
+			pLogFileStream.flush();
+		}
+
 		size_t currentSize = GetCurrentLogFileSizeUnlocked();
 		auto trigger = rotationManager_->CheckRotationNeeded(currentLogFileName, currentSize);
 
-		// Check if any rotation condition is met
 		if (trigger.sizeExceeded || trigger.timeReached || trigger.manualRequested) {
-			// CRITICAL: Flush and close the current log file stream before rotation
-			// This ensures all buffered data is written to disk
 			if (pLogFileStream.is_open()) {
-				pLogFileStream.flush();  // Force write all buffered data
-				pLogFileStream.close();  // Close the file handle
+				pLogFileStream.close();
 			}
 			
-			// Perform rotation asynchronously with timeout
-			std::cout << "[LogRotation] Starting async rotation...\n";
 			auto rotationFuture = rotationManager_->PerformRotationAsync(currentLogFileName, trigger);
 
-			// Wait for completion with timeout to avoid blocking indefinitely
 			RotationResult result;
 			if (rotationFuture.wait_for(std::chrono::seconds(30)) == std::future_status::ready) {
 				result = rotationFuture.get();
-				std::cout << "[LogRotation] Rotation completed within timeout\n";
 			} else {
-				std::cout << "[LogRotation] Rotation timeout - continuing without waiting\n";
 				result.success = false;
 				result.errorMessage = "Rotation operation timed out after 30 seconds";
 			}
 
 			if (result.success) {
-				// Update current file name if rotation created a new file
 				if (!result.newFileName.empty()) {
 					currentLogFileName = result.newFileName;
 				}
-				std::cout << "[LogRotation] Rotation completed: " << result.errorMessage << "\n";
 			}
 			else {
 				std::cerr << "[LogRotation] Rotation failed: " << result.errorMessage << "\n";
 			}
 			
-			// CRITICAL: Reopen the log file stream after rotation
-			// This ensures we can continue writing to the (possibly new) log file
-			if (!pLogFileStream.is_open()) {
-				pLogFileStream.open(currentLogFileName.c_str(), std::ios::app);
-				if (pLogFileStream.is_open()) {
-					pLogFileStream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-				}
-			}
+			ReopenLogFileStream();
 		}
 	}
 	catch (const std::exception& e) {
